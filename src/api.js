@@ -8,6 +8,7 @@ const middlewares = require('./middlewares');
 
 const auth  = require('./routes/auth');
 const movie = require('./routes/movie');
+const playlist = require('./routes/playlist');
 
 
 const api = express();
@@ -22,13 +23,14 @@ api.use(middlewares.allowCrossDomain);
 // Basic route
 api.get('/', (req, res) => {
     res.json({
-        name: 'SEBA Master Movie Backend'
+        name: 'TeamTune Backend'
     });
 });
 
 // API routes
 api.use('/auth'  , auth);
 api.use('/movies', movie);
+api.use('/playlists', playlist);
 
 
 module.exports = api;
