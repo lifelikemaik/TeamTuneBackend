@@ -36,7 +36,7 @@ const PlaylistMusicSchema = new mongoose.Schema({
     time_signature: Number,
     valence_min: Number,
     valence_max: Number,
-}, { _id: false });
+}, {_id: false});
 
 PlaylistMusicSchema.set("versionKey", false);
 
