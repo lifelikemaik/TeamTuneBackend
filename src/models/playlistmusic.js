@@ -5,9 +5,15 @@ const Song = require('./song')
 
 // Define the user schema
 const PlaylistMusicSchema = new mongoose.Schema({
-    durations_ms: Number,
+    durations_ms: {
+        type: Number,
+        required: true
+    },
     songs: [Song.schema],
-    number_songs: Number,
+    number_songs: {
+        type: Number,
+        required: true
+    },
     mode: Number,
     acousticness_min: Number,
     acousticness_max: Number,
