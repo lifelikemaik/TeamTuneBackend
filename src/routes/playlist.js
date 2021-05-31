@@ -14,12 +14,12 @@ router.get("/:id", PlaylistController.read); // Read a playlist by Id
 router.post("/", PlaylistController.create); // Create a new Playlist
 
 // TODO: Add authentication
-router.put("/:id", PlaylistController.update) // Edit playlist (like title)
+router.put("/:id", PlaylistController.update) // Edit playlist by Id (like title)
 
 
-router.put("/:id", PlaylistController.remove) // Edit playlist (like title)
+router.delete("/:id", PlaylistController.remove) // Delete playlist by Id
 
-router.post("/:id", PlaylistMusicController.create) // Adds new Songs to the playlist
+router.post("/:id", PlaylistMusicController.create) // Adds new Songs to the playlist by Id
 
 router.delete("/:id/:song_id", PlaylistMusicController.remove) // Removes the song by song_id from the playlist with id
 

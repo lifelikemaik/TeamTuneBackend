@@ -83,10 +83,10 @@ const read = async (req, res) => {
 
 const remove = async (req, res) => {
     try {
-        // find and remove movie
+        // find and remove playlist
         await PlaylistModel.findByIdAndRemove(req.params.id).exec();
 
-        // return message that movie was deleted
+        // return message that playlist was deleted
         return res
             .status(200)
             .json({message: `Playlist with id${req.params.id} was deleted`});
