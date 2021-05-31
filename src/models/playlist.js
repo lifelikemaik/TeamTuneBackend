@@ -9,7 +9,7 @@ const PlaylistSchema = new mongoose.Schema({
     title: String,
     is_own_playlist: Boolean,
     share_link: String,
-    music_info: PlaylistMusic,
+    music_info: PlaylistMusic.schema,
     joined_people: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'InvitedUser',

@@ -6,7 +6,7 @@ const Song = require('./song')
 // Define the user schema
 const PlaylistMusicSchema = new mongoose.Schema({
     durations_ms: Number,
-    songs: [Song],
+    songs: [Song.schema],
     number_songs: Number,
     mode: Number,
     acousticness_min: Number,
@@ -32,7 +32,7 @@ const PlaylistMusicSchema = new mongoose.Schema({
     valence_max: Number,
 }, { _id: false });
 
-UserSchema.set("versionKey", false);
+PlaylistMusicSchema.set("versionKey", false);
 
 // Export the Movie model
 module.exports = mongoose.model("PlaylistMusic", PlaylistMusicSchema);

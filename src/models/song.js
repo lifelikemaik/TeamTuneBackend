@@ -2,7 +2,7 @@
 
 const mongoose = require("mongoose");
 
-// Define the user schema
+// Define the Song schema
 const SongSchema = new mongoose.Schema({
     interpret: String,
     album: String,
@@ -21,7 +21,7 @@ const SongSchema = new mongoose.Schema({
     valence: Number,
 }, { _id: false });
 
-UserSchema.set("versionKey", false);
+SongSchema.set("versionKey", false);
 
 // Export the Movie model
 module.exports = mongoose.model("Song", SongSchema);
