@@ -19,7 +19,7 @@ const SongSchema = new mongoose.Schema({
     tempo: Number,
     time_signature: Number,
     valence: Number,
-}, { _id: false });
+});
 
 SongSchema.set("versionKey", false);
 

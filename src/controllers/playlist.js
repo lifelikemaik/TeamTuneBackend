@@ -81,6 +81,24 @@ const read = async (req, res) => {
     }
 };
 
+const remove = async (req, res) => {
+    try {
+        // find and remove movie
+        await PlaylistModel.findByIdAndRemove(req.params.id).exec();
+
+        // return message that movie was deleted
+        return res
+            .status(200)
+            .json({message: `Playlist with id${req.params.id} was deleted`});
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: "Internal server error",
+            message: err.message,
+        });
+    }
+};
+
 
 const list = async (req, res) => {
     try {
@@ -103,5 +121,6 @@ module.exports = {
     create,
     update,
     read,
+    remove,
     list,
 };
