@@ -89,7 +89,7 @@ const remove = async (req, res) => {
         // return message that movie was deleted
         return res
             .status(200)
-            .json({ message: `Movie with id${req.params.id} was deleted` });
+            .json({message: `Movie with id${req.params.id} was deleted`});
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -126,7 +126,7 @@ const getRate = async (req, res) => {
         let rating = movieRating.avgAudienceRating;
 
         // return average audience rating
-        return res.status(200).json({ rating: rating });
+        return res.status(200).json({rating: rating});
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -168,7 +168,7 @@ const rate = async (req, res) => {
                 rating: req.body.rating,
             };
             await MovieModel.findByIdAndUpdate(votedMovieId, {
-                $push: { audienceRatings: ratingObject },
+                $push: {audienceRatings: ratingObject},
             });
         }
 
