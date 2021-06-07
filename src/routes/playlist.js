@@ -8,6 +8,8 @@ const PlaylistMusicController = require('../controllers/playlistmusic')
 
 router.get("/", PlaylistController.list); // List all playlists
 
+router.get("/public", PlaylistController.list_public); // List all public playlists
+
 router.get("/:id", PlaylistController.read); // Read a playlist by Id
 
 // TODO: Add authentication

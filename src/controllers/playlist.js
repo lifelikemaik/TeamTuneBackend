@@ -116,6 +116,22 @@ const list = async (req, res) => {
     }
 };
 
+const list_public = async (req, res) => {
+    try {
+        // get all public playlists in database
+        let playlists = await PlaylistModel.find({ publicity: true }).exec();
+
+        // return gotten playlists
+        return res.status(200).json(playlists);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: "Internal server error",
+            message: err.message,
+        });
+    }
+};
+
 
 module.exports = {
     create,
@@ -123,4 +139,5 @@ module.exports = {
     read,
     remove,
     list,
+    list_public,
 };
