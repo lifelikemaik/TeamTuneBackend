@@ -56,9 +56,6 @@ const login = async (req, res) => {
     }
 };
 
-const callback = async (req, res) => {
-    
-}
 
 const register = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -74,67 +71,62 @@ const register = async (req, res) => {
             message: "The request body must contain a username property",
         });
 
-    // handle the request
     try {
         // hash the password before storing it in the database
-        const hashedPassword = bcrypt.hashSync(req.body.password, 8);
-
-        // https://accounts.spotify.com/de/login?continue=https:%2F%2Faccounts.spotify.com%2Fauthorize%3Fscope%3Duser-read-private%2Buser-read-email%2Buser-library-read%2Buser-library-modify%2Bplaylist-read-collaborative%2Bplaylist-read-private%2Bplaylist-modify-private%2Bplaylist-modify-public%26response_type%3Dcode%26redirect_uri%3Dhttp%253A%252F%252Flocalhost%253A8888%252F%26state%3DMBi9JmuQyA8agrbo%26client_id%3D13fc26a1aa724752953370044913e510
-        // example auth link
-        
-        const scopes = ['user-read-private', 'user-read-email', 'user-library-read', 'user-library-modify', 'playlist-read-collaborative', 'playlist-read-private', 'playlist-modify-private', 'playlist-modify-public']
-        const state = generateRandomString(16);
-        const spotifyApi = new SpotifyWebApi({
+        const hashedPassword = bcrypt.hashSync(req.body.password, 8);   
+        var credentials = {
             clientId: config.client_id,
-            redirectUri: 'http://localhost:3000/callback'
-          });
-        const authorizeURL = spotifyApi.createAuthorizeURL(scopes, state);
-        console.log(authorizeURL);
+            clientSecret: config.client_secret,
+            redirectUri: 'http://localhost:4000/callback/register'
+        };
 
-        open(authorizeURL); // --> close previous window --> frontend triggern!!!
+    var spotifyApi = new SpotifyWebApi(credentials);
 
-        /*
-            Callback bekommt response, token bekkomen und speichern, mit user login 
-        */
-        // create a user object
-        
-        // code wird nur einmal verwendet und nicht zweimal, durch code bekommt man 
-
+    spotifyApi.authorizationCodeGrant(req.body.code)
+    .then(
+        function(data) {
+          // Set the access token on the API object to use it in later calls
+          spotifyApi.setAccessToken(data.body['access_token']);
+          spotifyApi.setRefreshToken(data.body['refresh_token']);
+        },
+        function(err) {
+          console.log('Something went wrong!', err);
+        }
+      )
+    .then(
+        function(){ // anonymous function for user creation
+        const access = spotifyApi.getAccessToken();
+        const refresh = spotifyApi.getRefreshToken();
+        const now = new Date();
+        const tokenexpired = now.setHours(now.getHours()+1);
         const user = {
             username: req.body.username,
             password: hashedPassword,
             role: req.body.isAdmin ? "admin" : "member",
-            code: String,
-            state: state,
-            access_token: String,
-            token_type: String,
-            refresh_token: String
+            access_token: access,
+            refresh_token: refresh,
+            token_refreshdate: tokenexpired
         };
-
-        // create the user in the database
-        let retUser = await UserModel.create(user);
-
-        // if user is registered without errors
-        // create a token
-        const token = jwt.sign(
-            {
-                _id: retUser._id,
-                username: retUser.username,
-                role: retUser.role,
-                state: retUser.state,
-            },
-            config.JwtSecret,
-            {
-                expiresIn: 86400, // expires in 24 hours
-            }
-        );
-
-        // return generated token
-        res.status(200).json({
-            token: token,
-        });
-        console.log(token);
-        // console.log(res);
+        // then create user in database, no await because of "then"
+        let retUser = UserModel.create(user);
+              const token = jwt.sign(
+                {
+                    _id: retUser._id,
+                    username: retUser.username,
+                    role: retUser.role,
+                },
+                config.JwtSecret,
+                {
+                    expiresIn: 86400, // expires in 24 hours
+                }
+            );
+    
+            // return generated token
+            res.status(200).json({
+                token: token,
+            });
+       }
+      );
     } catch (err) {
         if (err.code == 11000) {
             return res.status(400).json({
@@ -175,26 +167,6 @@ const me = async (req, res) => {
 const logout = (req, res) => {
     res.status(200).send({ token: null });
 };
-
-var generateRandomString = function(length) {
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  
-    for (var i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  };
-
-function getCode() {
-    let code = null;
-    const queryString = window.location.search
-    if(queryString.length > 0){
-        const urlParams = new URLSearchParams(queryString);
-        code = urlParams.get('code')
-    }
-    return code;
-}
   
 
 module.exports = {

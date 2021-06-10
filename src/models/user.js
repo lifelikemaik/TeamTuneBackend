@@ -28,7 +28,6 @@ const UserSchema = new mongoose.Schema({
     code: String,
     state: String,
     access_token: String,
-    token_type: String,
     refresh_token: String,
     token_refreshdate: Date
 });
