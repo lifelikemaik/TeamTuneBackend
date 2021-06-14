@@ -1,11 +1,12 @@
 "use strict";
 const SpotifyWebApi = require('spotify-web-api-node');
-const open = require('open');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 const config = require("../config");
 const UserModel = require("../models/user");
+
+
 
 const login = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -34,6 +35,42 @@ const login = async (req, res) => {
             user.password
         );
         if (!isPasswordValid) return res.status(401).send({ token: null });
+
+        // get access token and check expiration date
+        const now = new Date();
+        const tokenexpired = now.setHours(now.getHours()+1);
+        if (now >= user.token_refreshdate){
+            console.log("refresh");
+            console.log(user.access_token);
+            var spotifyApi = new SpotifyWebApi();
+            spotifyApi.setCredentials({
+                clientId: config.client_id,
+                clientSecret: config.client_secret,
+                redirectUri: 'http://localhost:4000/callback/login',
+                refreshToken: user.refresh_token,
+                accessToken: user.access_token
+            });
+            // clientId, clientSecret and refreshToken has been set on the api object previous to this call.
+            spotifyApi.refreshAccessToken().then(
+                function(data) {
+                    //console.log('The access token has been refreshed!');
+                    spotifyApi.setAccessToken(data.body['access_token']);
+                    //console.log(user.access_token);
+                    user.set('access_token', data.body['access_token']);
+                    user.set('token_refreshdate', tokenexpired);
+                },
+                function(err) {
+                    console.log('Could not refresh access token', err);
+                }
+            );
+
+
+        }
+        else {
+            console.log("retrieve token");
+            console.log(user.access_token);
+        }
+
 
         // if user is found and password is valid
         // create a token
@@ -73,7 +110,8 @@ const register = async (req, res) => {
 
     try {
         // hash the password before storing it in the database
-        const hashedPassword = bcrypt.hashSync(req.body.password, 8);   
+        const hashedPassword = bcrypt.hashSync(req.body.password, 8);
+
         var credentials = {
             clientId: config.client_id,
             clientSecret: config.client_secret,
