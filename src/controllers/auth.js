@@ -133,22 +133,22 @@ const register = async (req, res) => {
         }
       )
     .then(
-        function(){ // anonymous function for user creation
-        const access = spotifyApi.getAccessToken();
-        const refresh = spotifyApi.getRefreshToken();
-        const now = new Date();
-        const tokenexpired = now.setHours(now.getHours()+1);
-        const user = {
-            username: req.body.username,
-            password: hashedPassword,
-            role: req.body.isAdmin ? "admin" : "member",
-            access_token: access,
-            refresh_token: refresh,
-            token_refreshdate: tokenexpired
-        };
-        // then create user in database, no await because of "then"
-        let retUser = UserModel.create(user);
-              const token = jwt.sign(
+        async function () { // anonymous function for user creation
+            const access = spotifyApi.getAccessToken();
+            const refresh = spotifyApi.getRefreshToken();
+            const now = new Date();
+            const tokenexpired = now.setHours(now.getHours() + 1);
+            const user = {
+                username: req.body.username,
+                password: hashedPassword,
+                role: req.body.isAdmin ? "admin" : "member",
+                access_token: access,
+                refresh_token: refresh,
+                token_refreshdate: tokenexpired
+            };
+            // then create user in database, no await because of "then"
+            let retUser = await UserModel.create(user);
+            const token = jwt.sign(
                 {
                     _id: retUser._id,
                     username: retUser.username,
@@ -159,12 +159,12 @@ const register = async (req, res) => {
                     expiresIn: 86400, // expires in 24 hours
                 }
             );
-    
+
             // return generated token
             res.status(200).json({
                 token: token,
             });
-       }
+        }
       );
     } catch (err) {
         if (err.code == 11000) {
