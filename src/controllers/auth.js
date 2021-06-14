@@ -50,14 +50,15 @@ const login = async (req, res) => {
                 refreshToken: user.refresh_token,
                 accessToken: user.access_token
             });
-            // clientId, clientSecret and refreshToken has been set on the api object previous to this call.
+
             spotifyApi.refreshAccessToken().then(
                 function(data) {
-                    //console.log('The access token has been refreshed!');
+                    console.log('The access token has been refreshed!');
                     spotifyApi.setAccessToken(data.body['access_token']);
-                    //console.log(user.access_token);
+                    console.log(user.access_token);
                     user.set('access_token', data.body['access_token']);
                     user.set('token_refreshdate', tokenexpired);
+                    user.save();
                 },
                 function(err) {
                     console.log('Could not refresh access token', err);
