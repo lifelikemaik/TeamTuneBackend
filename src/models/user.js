@@ -24,7 +24,10 @@ const UserSchema = new mongoose.Schema({
     playlists: [{ type: mongoose.Schema.Types.ObjectId,
         ref: 'Playlist',
         required: false
-    }]
+    }],
+    access_token: String,
+    refresh_token: String,
+    token_refreshdate: Date
 });
 
 UserSchema.set("versionKey", false);

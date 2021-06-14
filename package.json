@@ -25,7 +25,9 @@
     "express": "4.16.2",
     "helmet": "3.11.0",
     "jsonwebtoken": "8.1.1",
-    "mongoose": "^5.0.7"
+    "mongoose": "^5.0.7",
+    "open": "^8.2.0",
+    "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
     "nodemon": "1.14.12"
