@@ -21,9 +21,10 @@ const UserSchema = new mongoose.Schema({
         // if not specified the role member is choosen
         default: "member",
     },
-    playlists: [{ type: mongoose.Schema.Types.ObjectId,
+    playlists: [{
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Playlist',
-        required: false
+        required: false,
     }]
 });
 
