@@ -3,6 +3,7 @@
 const express = require("express");
 const router = express.Router();
 
+const middlewares = require("../middlewares");
 const PlaylistController = require("../controllers/playlist");
 const PlaylistMusicController = require('../controllers/playlistmusic')
 
@@ -12,8 +13,7 @@ router.get("/public", PlaylistController.list_public); // List all public playli
 
 router.get("/:id", PlaylistController.read); // Read a playlist by Id
 
-// TODO: Add authentication
-router.post("/", PlaylistController.create); // Create a new Playlist
+router.post("/",middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
 
 // TODO: Add authentication
 router.put("/:id", PlaylistController.update) // Edit playlist by Id (like title)

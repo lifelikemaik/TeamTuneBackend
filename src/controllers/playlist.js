@@ -1,6 +1,7 @@
 "use strict";
 
 const PlaylistModel = require("../models/playlist");
+const UserModel = require("../models/user");
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -14,7 +15,11 @@ const create = async (req, res) => {
     try {
         // create playlist in database
         let playlist = await PlaylistModel.create(req.body);
-
+        // add playlist id to users playlists
+        let user_playlists = await UserModel.update(
+            {_id: req.userId},
+            {$addToSet: { playlists: playlist._id }}
+        ).exec();
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {

@@ -203,6 +203,24 @@ const me = async (req, res) => {
     }
 };
 
+const my_playlists = async (req, res) => {
+    try {
+        // get own playlists from database
+        let playlists = await UserModel.findById(req.userId)
+            .populate("playlists")
+            .select("playlists")
+            .exec();
+
+        return res.status(200).json(playlists);
+    } catch (err) {
+        return res.status(500).json({
+            error: "Internal Server Error",
+            message: err.message,
+        });
+    }
+};
+
+
 const logout = (req, res) => {
     res.status(200).send({ token: null });
 };
@@ -213,4 +231,5 @@ module.exports = {
     register,
     logout,
     me,
+    my_playlists,
 };
