@@ -24,6 +24,13 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
 
         // Get a playlist
+        const data = await spotifyApi.getPlaylist(playlistId, {limit: 100});
+        const tracks = await spotifyApi.getPlaylistTracks(playlistId);
+        const allTracks = await getAllTracks(spotifyApi, playlistId, 0, [], tracks.body);
+        data.body.tracks.items = allTracks;
+        return data.body;
+
+        /* Alternative way with then and Promise:
         return new Promise(function (resolve, reject) {
             spotifyApi.getPlaylist(playlistId, {limit: 100})
                 .then(async function (data) {
@@ -36,6 +43,7 @@ module.exports = {
                     reject(err);
                 });
         })
+         */
     },
     /**
      * returns all Playlists of a user
@@ -50,6 +58,11 @@ module.exports = {
         }
         const spotifyApi = authenticateAPI(user);
 
+        const data = await spotifyApi.getUserPlaylists(undefined);
+        const allPlaylists = await getAllUserPlaylists(spotifyApi, 0, [], data.body);
+        return allPlaylists;
+
+        /* Alternative way with then and Promise:
         return new Promise(function (resolve, reject) {
             spotifyApi.getUserPlaylists(undefined)
                 .then(async function (data) {
@@ -60,6 +73,7 @@ module.exports = {
                     reject(err);
                 });
         });
+         */
 
     },
     followPlaylistSpotify: async function (user, playlistId) {
