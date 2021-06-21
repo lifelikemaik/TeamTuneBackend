@@ -15,6 +15,12 @@ function authenticateAPI(user) {
 }
 
 module.exports = {
+    /**
+     * Gets a playlist with all its tracks
+     * @param user
+     * @param playlistId
+     * @returns {Promise<null|*>} Promise of playlist object
+     */
     getPlaylistSpotify: async function (user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
@@ -62,7 +68,8 @@ module.exports = {
         const allPlaylists = await getAllUserPlaylists(spotifyApi, 0, [], data.body);
         return allPlaylists;
 
-        /* Alternative way with then and Promise:
+        /*
+        // Alternative way with then and Promise:
         return new Promise(function (resolve, reject) {
             spotifyApi.getUserPlaylists(undefined)
                 .then(async function (data) {
@@ -74,8 +81,13 @@ module.exports = {
                 });
         });
          */
-
     },
+    /**
+     * Follows a playlist on spotify
+     * @param user current user
+     * @param playlistId id of playlist to follow
+     * @returns {Promise<*|null>} http response of spotify api
+     */
     followPlaylistSpotify: async function (user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
@@ -109,6 +121,15 @@ async function getAllUserPlaylists(spotifyApi, offset, allPlaylists, firstRespon
     return allPlaylists;
 }
 
+/**
+ * concats all tracks of a playlist through pagination of Spotify API
+ * @param spotifyApi
+ * @param playlistId
+ * @param offset
+ * @param allTracks
+ * @param firstResponse
+ * @returns {Promise<*>} Promise of array with all tracks
+ */
 async function getAllTracks(spotifyApi, playlistId, offset, allTracks, firstResponse) {
     while (!!firstResponse?.next) {
         allTracks = allTracks.concat(firstResponse.items);
