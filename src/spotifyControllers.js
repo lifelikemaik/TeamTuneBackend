@@ -62,6 +62,18 @@ module.exports = {
         });
 
     },
+    followPlaylistSpotify: async function (user, playlistId) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.')
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+
+        const result = await spotifyApi.followPlaylist(playlistId);
+        console.log(result);
+        return result;
+    },
 }
 
 /**
