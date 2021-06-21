@@ -16,6 +16,7 @@ function authenticateAPI(user) {
 
 module.exports = {
     getPlaylistSpotify: async function (user, playlistId) {
+        // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.')
             return null;
@@ -25,9 +26,11 @@ module.exports = {
         // Get a playlist
         return new Promise(function (resolve, reject) {
             spotifyApi.getPlaylist(playlistId, {limit: 100})
-                .then(function(data) {
+                .then(async function (data) {
+                    const tracks = await spotifyApi.getPlaylistTracks(playlistId);
+                    const allTracks = await getAllTracks(spotifyApi, playlistId, 0, [], tracks.body);
+                    data.body.tracks.items = allTracks;
                     resolve(data.body);
-                    //console.log('Some information about this playlist', data.body);
                 }, function(err) {
                     console.log('Something went wrong!', err);
                     reject(err);
@@ -40,6 +43,7 @@ module.exports = {
      * @returns {Promise<unknown>} Promise containing a list of all playlists
      */
     getUserPlaylistsSpotify: async function (user) {
+        // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.')
             return null;
@@ -51,7 +55,6 @@ module.exports = {
                 .then(async function (data) {
                     const allPlaylists = await getAllUserPlaylists(spotifyApi, 0, [], data.body);
                     resolve(allPlaylists);
-                    //console.log('Some information about this playlist', data.body);
                 }, function(err) {
                     console.log('Something went wrong!', err);
                     reject(err);
@@ -70,24 +73,25 @@ module.exports = {
  * @returns {Promise<*>} Promise containing array of all playlists
  */
 async function getAllUserPlaylists(spotifyApi, offset, allPlaylists, firstResponse) {
-    console.log('firstResponse.next: ', !!firstResponse.next);
     while (!!firstResponse?.next) {
-        console.log('looping');
         allPlaylists = allPlaylists.concat(firstResponse.items);
         offset += 20;
         firstResponse = await spotifyApi.getUserPlaylists(undefined, {limit: 20, offset: offset});
-        console.log('firstResponse1: ', firstResponse);
         firstResponse = firstResponse?.body;
-        console.log('firstResponse2: ', firstResponse);
     }
     allPlaylists = allPlaylists.concat(firstResponse.items);
     return allPlaylists;
 }
 
-async function getAllTracks(requestFunction, offset, allTracks, firstResponse) {
-    while (!!firstResponse?.tracks?.next) {
-
+async function getAllTracks(spotifyApi, playlistId, offset, allTracks, firstResponse) {
+    while (!!firstResponse?.next) {
+        allTracks = allTracks.concat(firstResponse.items);
+        offset += 100;
+        firstResponse = await spotifyApi.getPlaylistTracks(playlistId, { limit: 100, offset: offset})
+        firstResponse = firstResponse.body;
     }
+    allTracks = allTracks.concat(firstResponse.items);
+    return allTracks;
 }
 
 
