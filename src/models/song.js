@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 
 // Define the Song schema
 const SongSchema = new mongoose.Schema({
+    title: String,
+    added_by: String,
     interpret: String,
     album: String,
     acousticness: Number,
