@@ -100,6 +100,23 @@ module.exports = {
         console.log(result);
         return result;
     },
+    /**
+     * Search for tracks on spotify
+     * @param user current user
+     * @param trackName name of track, album or artist
+     * @returns result http response of spotify api
+     */
+    searchTracksSpotify: async function (user, trackName) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.')
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+
+        const result = await spotifyApi.searchTracks(trackName);
+        return result;
+    },
 }
 
 /**
