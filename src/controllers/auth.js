@@ -135,12 +135,14 @@ const register = async (req, res) => {
         async function () { // anonymous function for user creation
             const access = spotifyApi.getAccessToken();
             const refresh = spotifyApi.getRefreshToken();
+            const spotifyId = await spotifyApi.getMe().catch(err => alert(err));
             const now = new Date();
             const tokenexpired = now.setHours(now.getHours() + 1);
             const user = {
                 username: req.body.username,
                 password: hashedPassword,
                 role: req.body.isAdmin ? "admin" : "member",
+                spotify_id: spotifyId.body.id,
                 access_token: access,
                 refresh_token: refresh,
                 token_refreshdate: tokenexpired

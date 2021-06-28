@@ -2,6 +2,7 @@
 
 const PlaylistModel = require("../models/playlist");
 const UserModel = require("../models/user");
+const express = require("express");
 const {getUserPlaylistsSpotify} = require("../spotifyControllers");
 
 const create = async (req, res) => {
@@ -15,12 +16,8 @@ const create = async (req, res) => {
     // handle the request
     try {
         // create playlist in database
-        let playlist = await PlaylistModel.create(req.body);
-        // add playlist id to users playlists
-        let user_playlists = await UserModel.update(
-            {_id: req.userId},
-            {$addToSet: {playlists: playlist._id}}
-        ).exec();
+        let playlist = await createPlaylistDatabase(req.body, req.userId)
+
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {
@@ -31,6 +28,18 @@ const create = async (req, res) => {
         });
     }
 };
+
+const createPlaylistDatabase = async (body, userId) => {
+    console.log(body, userId)
+    // create playlist in database
+    let playlist = await PlaylistModel.create(body);
+    // add playlist id to users playlists
+    await UserModel.update(
+        {_id: userId},
+        {$addToSet: {playlists: playlist._id}}
+    ).exec();
+    return playlist;
+}
 
 const update = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -156,16 +165,12 @@ const list_user_playlists = async (req, res) => {
             const spotify_playlists = await getUserPlaylistsSpotify(user);
 
             for (let i in spotify_playlists) {
-                console.log(spotify_playlists[i].id);
-
                 if(playlistContained(spotify_playlists[i].id, playlists.playlists)){
                     // Playlist already included in Database but might need updating
-                    console.log("Playlist already included")
+                    //TODO update existing playlist
                 } else {
-                    // Playlist does not included yet and has to be created in TeamTune
-                    console.log("Spotify Playlist not included yet");
-                    console.log(packPlaylist(spotify_playlists[i]));
-                    //await create(packPlaylist(spotify_playlists[i]), res);
+                    // Playlist is not included yet and has to be created in TeamTune
+                    const tmpPlaylist = await createPlaylistDatabase(packPlaylist(spotify_playlists[i], user.spotify_id), req.userId);
                 }
             }
         }
@@ -179,6 +184,15 @@ const list_user_playlists = async (req, res) => {
     }
 };
 
+// Check if playlist creator matches users spotify id
+const is_user_playlist = (ownerId, spotifyId) => {
+    if(ownerId === spotifyId){
+        return true;
+    }
+    return false;
+}
+
+
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
     for (let j in playlists) {
@@ -190,15 +204,22 @@ const playlistContained = (id, playlists) => {
 }
 
 // creating a object with all relevant data to create a playlist
-const packPlaylist = (playlist) => {
+const packPlaylist = (playlist, spotifyId) => {
     return {
-        title: playlist.name,
-        publicity: playlist.public,
+        title: playlist.name || "NONAME",
+        publicity: false,
         spotify_id: playlist.id,
-        is_own_playlist: false,
+        is_own_playlist: (playlist.owner.id === spotifyId),
+        description: playlist.description,
         share_link: "",
         joined_people: [],
-        music_info: [],
+        is_teamtune_playlist: false,
+        music_info: {
+            durations_ms: 0,
+            duration_target: 0,
+            songs: [],
+            number_songs: 0,
+        },
     }
 };
 
