@@ -4,6 +4,12 @@ const PlaylistModel = require("../models/playlist");
 const UserModel = require("../models/user");
 const express = require("express");
 const {getUserPlaylistsSpotify} = require("../spotifyControllers");
+const https = require('https');
+const {addSongToPlaylist} = require("../spotifyControllers");
+const {getAudioFeaturesForTracks} = require("../spotifyControllers");
+const {searchTracksSpotify} = require("../spotifyControllers");
+
+
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -52,6 +58,7 @@ const update = async (req, res) => {
 
     // handle the request
     try {
+        
         // find and update playlist with id
         let playlist = await PlaylistModel.findByIdAndUpdate(
             req.params.id,
@@ -251,6 +258,62 @@ const packPlaylistUpdate = (playlist, spotifyId) => {
     }
 };
 
+const find_song = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+        const songName = req.params.songname;
+        console.log('songName: ', songName);
+        if (songName && user) {
+            const request = await searchTracksSpotify(user, songName);
+            //console.log('request.body.tracks.items: ', request.body.tracks.items);
+            const songsFiltered = request.body.tracks.items.filter((result) => result.type === 'track');
+            const songIds = songsFiltered.map(song => song.id);
+            console.log('songIds: ', songIds);
+            const audioFeaturesResult = await getAudioFeaturesForTracks(user, songIds);
+            const audioFeatures = audioFeaturesResult.body.audio_features;
+            console.log('audioFeatures: ', audioFeatures);
+            const songs = songsFiltered
+                .map((spotifySong) => {
+                    return {
+                        spotify_id: spotifySong.id,
+                        name: spotifySong.name,
+                        duration_ms: spotifySong.duration_ms,
+                        artists: spotifySong.artists.map((artist) => {return {
+                            id: artist.id,
+                            name: artist.name,
+                        }}),
+                        audio_features: audioFeatures.find(element => element.id === spotifySong.id),
+                    }
+            });
+            //console.log('songs: ', songs);
+            return res.status(200).json(songs);
+        }
+        return res.status(400);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: "Internal server error",
+            message: err.message,
+        });
+    }
+}
+
+const add_song = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+        const result = await addSongToPlaylist(user, req.params.song_id, req.params.id)
+        return res.status(200).json(result.body);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: "Internal server error",
+            message: err.message,
+        });
+
+    }
+}
+
+
 module.exports = {
     create,
     update,
@@ -259,4 +322,6 @@ module.exports = {
     list,
     list_public,
     list_user_playlists,
+    find_song,
+    add_song
 };
