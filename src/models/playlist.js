@@ -6,6 +6,7 @@ const PlaylistMusic = require('./playlistmusic')
 
 const PlaylistSchema = new mongoose.Schema({
     publicity: Boolean,
+    spotify_id: String,
     title: {
         type: String,
         required: true

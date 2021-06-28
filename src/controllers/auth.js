@@ -7,7 +7,6 @@ const config = require("../config");
 const UserModel = require("../models/user");
 
 
-
 const login = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (!Object.prototype.hasOwnProperty.call(req.body, "password"))
@@ -203,22 +202,6 @@ const me = async (req, res) => {
     }
 };
 
-const my_playlists = async (req, res) => {
-    try {
-        // get own playlists from database
-        let playlists = await UserModel.findById(req.userId)
-            .populate("playlists")
-            .select("playlists")
-            .exec();
-
-        return res.status(200).json(playlists);
-    } catch (err) {
-        return res.status(500).json({
-            error: "Internal Server Error",
-            message: err.message,
-        });
-    }
-};
 
 
 const logout = (req, res) => {
@@ -231,5 +214,4 @@ module.exports = {
     register,
     logout,
     me,
-    my_playlists,
 };
