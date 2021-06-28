@@ -27,6 +27,7 @@
     "jsonwebtoken": "8.1.1",
     "mongoose": "^5.0.7",
     "open": "^8.2.0",
+    "prettier": "^2.3.2",
     "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
