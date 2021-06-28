@@ -11,9 +11,11 @@ router.get("/", PlaylistController.list); // List all playlists
 
 router.get("/public", PlaylistController.list_public); // List all public playlists
 
+router.get("/my_playlists", middlewares.checkAuthentication, PlaylistController.list_user_playlists); // get user playlists, requires a logged in user
+
 router.get("/:id", PlaylistController.read); // Read a playlist by Id
 
-router.post("/",middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
+router.post("/", middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
 
 // TODO: Add authentication
 router.put("/:id", PlaylistController.update) // Edit playlist by Id (like title)

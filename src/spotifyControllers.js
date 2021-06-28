@@ -54,7 +54,7 @@ module.exports = {
     /**
      * returns all Playlists of a user
      * @param user the user object which needs to have an access_token and refresh_token
-     * @returns {Promise<unknown>} Promise containing a list of all playlists
+     * @ returns {Promise<String>} Promise containing a list of all playlists
      */
     getUserPlaylistsSpotify: async function (user) {
         // Make sure spotify authentication works

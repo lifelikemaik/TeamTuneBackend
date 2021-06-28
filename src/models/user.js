@@ -26,6 +26,7 @@ const UserSchema = new mongoose.Schema({
         ref: 'Playlist',
         required: false
     }],
+    spotify_id: String,
     access_token: String,
     refresh_token: String,
     token_refreshdate: Date
