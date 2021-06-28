@@ -1,22 +1,22 @@
-"use strict";
+'use strict';
 
 const PlaylistModel = require("../models/playlist");
 const UserModel = require("../models/user");
 const express = require("express");
 const {getUserPlaylistsSpotify} = require("../spotifyControllers");
+const PlaylistModel = require('../models/playlist');
+const UserModel = require('../models/user');
 const https = require('https');
-const {addSongToPlaylist} = require("../spotifyControllers");
-const {getAudioFeaturesForTracks} = require("../spotifyControllers");
-const {searchTracksSpotify} = require("../spotifyControllers");
-
-
+const { addSongToPlaylist } = require('../spotifyControllers');
+const { getAudioFeaturesForTracks } = require('../spotifyControllers');
+const { searchTracksSpotify } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (Object.keys(req.body).length === 0)
         return res.status(400).json({
-            error: "Bad Request",
-            message: "The request body is empty",
+            error: 'Bad Request',
+            message: 'The request body is empty',
         });
 
     // handle the request
@@ -24,12 +24,17 @@ const create = async (req, res) => {
         // create playlist in database
         let playlist = await createPlaylistDatabase(req.body, req.userId)
 
+        // add playlist id to users playlists
+        let user_playlists = await UserModel.update(
+            { _id: req.userId },
+            { $addToSet: { playlists: playlist._id } }
+        ).exec();
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
     }
@@ -51,14 +56,13 @@ const update = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (Object.keys(req.body).length === 0) {
         return res.status(400).json({
-            error: "Bad Request",
-            message: "The request body is empty",
+            error: 'Bad Request',
+            message: 'The request body is empty',
         });
     }
 
     // handle the request
     try {
-        
         // find and update playlist with id
         let playlist = await PlaylistModel.findByIdAndUpdate(
             req.params.id,
@@ -74,7 +78,7 @@ const update = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
     }
@@ -99,7 +103,7 @@ const read = async (req, res) => {
         // if no playlist with id is found, return 404
         if (!playlist)
             return res.status(404).json({
-                error: "Not Found",
+                error: 'Not Found',
                 message: `Playlist not found`,
             });
 
@@ -108,7 +112,7 @@ const read = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal Server Error",
+            error: 'Internal Server Error',
             message: err.message,
         });
     }
@@ -122,16 +126,15 @@ const remove = async (req, res) => {
         // return message that playlist was deleted
         return res
             .status(200)
-            .json({message: `Playlist with id${req.params.id} was deleted`});
+            .json({ message: `Playlist with id${req.params.id} was deleted` });
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
     }
 };
-
 
 const list = async (req, res) => {
     try {
@@ -143,7 +146,7 @@ const list = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
     }
@@ -160,7 +163,7 @@ const list_public = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
     }
@@ -262,28 +265,32 @@ const find_song = async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId);
         const songName = req.params.songname;
-        console.log('songName: ', songName);
         if (songName && user) {
             const request = await searchTracksSpotify(user, songName);
-            //console.log('request.body.tracks.items: ', request.body.tracks.items);
-            const songsFiltered = request.body.tracks.items.filter((result) => result.type === 'track');
-            const songIds = songsFiltered.map(song => song.id);
-            console.log('songIds: ', songIds);
-            const audioFeaturesResult = await getAudioFeaturesForTracks(user, songIds);
+            const songsFiltered = request.body.tracks.items.filter(
+                (result) => result.type === 'track'
+            );
+            const songIds = songsFiltered.map((song) => song.id);
+            const audioFeaturesResult = await getAudioFeaturesForTracks(
+                user,
+                songIds
+            );
             const audioFeatures = audioFeaturesResult.body.audio_features;
-            console.log('audioFeatures: ', audioFeatures);
-            const songs = songsFiltered
-                .map((spotifySong) => {
-                    return {
-                        spotify_id: spotifySong.id,
-                        name: spotifySong.name,
-                        duration_ms: spotifySong.duration_ms,
-                        artists: spotifySong.artists.map((artist) => {return {
+            const songs = songsFiltered.map((spotifySong) => {
+                return {
+                    spotify_id: spotifySong.id,
+                    name: spotifySong.name,
+                    duration_ms: spotifySong.duration_ms,
+                    artists: spotifySong.artists.map((artist) => {
+                        return {
                             id: artist.id,
                             name: artist.name,
-                        }}),
-                        audio_features: audioFeatures.find(element => element.id === spotifySong.id),
-                    }
+                        };
+                    }),
+                    audio_features: audioFeatures.find(
+                        (element) => element.id === spotifySong.id
+                    ),
+                };
             });
             //console.log('songs: ', songs);
             return res.status(200).json(songs);
@@ -292,27 +299,29 @@ const find_song = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
     }
-}
+};
 
 const add_song = async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId);
-        const result = await addSongToPlaylist(user, req.params.song_id, req.params.id)
+        const result = await addSongToPlaylist(
+            user,
+            req.params.song_id,
+            req.params.id
+        );
         return res.status(200).json(result.body);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            error: "Internal server error",
+            error: 'Internal server error',
             message: err.message,
         });
-
     }
-}
-
+};
 
 module.exports = {
     create,
@@ -323,5 +332,5 @@ module.exports = {
     list_public,
     list_user_playlists,
     find_song,
-    add_song
+    add_song,
 };
