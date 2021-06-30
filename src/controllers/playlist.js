@@ -1,7 +1,5 @@
 'use strict';
 
-const PlaylistModel = require("../models/playlist");
-const UserModel = require("../models/user");
 const express = require("express");
 const {getUserPlaylistsSpotify} = require("../spotifyControllers");
 const PlaylistModel = require('../models/playlist');
