@@ -154,7 +154,7 @@ module.exports = {
         try {
             const uri = 'spotify:track:' + songId;
             const result = await spotifyApi.addTracksToPlaylist(
-                '1adzEe4TkCj5lgao1v8cr1',
+                playlistId,
                 [uri]
             );
             return result;
