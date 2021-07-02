@@ -212,6 +212,7 @@ const packPlaylist = (playlist, spotifyId) => {
         is_own_playlist: (playlist.owner.id === spotifyId),
         description: playlist.description,
         share_link: "",
+        image_url: playlist.images[0].url,
         joined_people: [],
         is_teamtune_playlist: false,
         music_info: {
