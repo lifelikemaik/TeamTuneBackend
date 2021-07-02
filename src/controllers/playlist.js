@@ -213,6 +213,7 @@ const packPlaylist = (playlist, spotifyId) => {
         description: playlist.description,
         track_count: playlist.tracks.total,
         share_link: "",
+        image_url: playlist.images[0].url,
         joined_people: [],
         is_teamtune_playlist: false,
         music_info: {
