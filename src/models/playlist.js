@@ -16,6 +16,7 @@ const PlaylistSchema = new mongoose.Schema({
         required: true
     },
     is_teamtune_playlist: Boolean,
+    track_count: Number,
     description: String,
     share_link: String,
     music_info: PlaylistMusic.schema,

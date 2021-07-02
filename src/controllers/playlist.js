@@ -211,6 +211,7 @@ const packPlaylist = (playlist, spotifyId) => {
         spotify_id: playlist.id,
         is_own_playlist: (playlist.owner.id === spotifyId),
         description: playlist.description,
+        track_count: playlist.tracks.total,
         share_link: "",
         joined_people: [],
         is_teamtune_playlist: false,
