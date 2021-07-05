@@ -73,6 +73,17 @@ const update = async (req, res) => {
     }
 };
 
+const updatePlaylistDatabase = async (packPlaylistUpdate) => {
+    let playlist = await PlaylistModel.findOneAndUpdate(
+        {spotify_id: packPlaylistUpdate.spotify_id},
+        packPlaylistUpdate,
+        {
+            new: true,
+        }
+    ).exec();
+    return playlist;
+}
+
 const read = async (req, res) => {
     try {
         // get playlist with id from database
@@ -167,13 +178,19 @@ const list_user_playlists = async (req, res) => {
             for (let i in spotify_playlists) {
                 if(playlistContained(spotify_playlists[i].id, playlists.playlists)){
                     // Playlist already included in Database but might need updating
-                    //TODO update existing playlist
+                    await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id));
                 } else {
                     // Playlist is not included yet and has to be created in TeamTune
-                    const tmpPlaylist = await createPlaylistDatabase(packPlaylist(spotify_playlists[i], user.spotify_id), req.userId);
+                    await createPlaylistDatabase(packPlaylist(spotify_playlists[i], user.spotify_id), req.userId);
                 }
             }
         }
+        // get user playlists from database
+        playlists = await UserModel.findById(req.userId)
+            .lean()
+            .populate("playlists")
+            .select("playlists")
+            .exec();
 
         return res.status(200).json(playlists.playlists);
     } catch (err) {
@@ -184,14 +201,12 @@ const list_user_playlists = async (req, res) => {
     }
 };
 
+
+
 // Check if playlist creator matches users spotify id
 const is_user_playlist = (ownerId, spotifyId) => {
-    if(ownerId === spotifyId){
-        return true;
-    }
-    return false;
+    return (ownerId === spotifyId);
 }
-
 
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
@@ -206,7 +221,7 @@ const playlistContained = (id, playlists) => {
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId) => {
     return {
-        title: playlist.name || "NONAME",
+        title: playlist.name || "NO NAME",
         publicity: false,
         spotify_id: playlist.id,
         is_own_playlist: (playlist.owner.id === spotifyId),
@@ -222,6 +237,17 @@ const packPlaylist = (playlist, spotifyId) => {
             songs: [],
             number_songs: 0,
         },
+    }
+};
+
+const packPlaylistUpdate = (playlist, spotifyId) => {
+    return {
+        title: playlist.name || "NO NAME",
+        publicity: false,
+        spotify_id: playlist.id,
+        description: playlist.description,
+        track_count: playlist.tracks.total,
+        image_url: playlist.images[0].url,
     }
 };
 
