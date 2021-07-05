@@ -202,6 +202,7 @@ const list_user_playlists = async (req, res) => {
 
         return res.status(200).json(playlists.playlists);
     } catch (err) {
+        console.log('err: ', err);
         return res.status(500).json({
             error: "Internal Server Error",
             message: err.message,
@@ -236,7 +237,7 @@ const packPlaylist = (playlist, spotifyId) => {
         description: playlist.description,
         track_count: playlist.tracks.total,
         share_link: "",
-        image_url: playlist.images[0].url,
+        image_url: playlist.images[0]?.url || null,
         joined_people: [],
         is_teamtune_playlist: false,
         music_info: {
@@ -255,7 +256,7 @@ const packPlaylistUpdate = (playlist, spotifyId) => {
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
-        image_url: playlist.images[0].url,
+        image_url: playlist.images[0]?.url || null,
     }
 };
 
