@@ -27,4 +27,8 @@ router.post("/:id", PlaylistMusicController.create) // Adds new Songs to the pla
 
 router.delete("/:id/:song_id", PlaylistMusicController.remove) // Removes the song by song_id from the playlist with id
 
+router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.find_song)
+
+router.put("/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song)
+
 module.exports = router;

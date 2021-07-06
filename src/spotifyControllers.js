@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 const SpotifyWebApi = require('spotify-web-api-node');
-const config = require("./config");
+const config = require('./config');
 
 function authenticateAPI(user) {
     const spotifyApi = new SpotifyWebApi();
@@ -9,7 +9,7 @@ function authenticateAPI(user) {
         clientSecret: config.client_secret,
         redirectUri: 'http://localhost:4000/callback/login',
         refreshToken: user.refresh_token,
-        accessToken: user.access_token
+        accessToken: user.access_token,
     });
     return spotifyApi;
 }
@@ -24,17 +24,28 @@ module.exports = {
     getPlaylistSpotify: async function (user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.')
+            console.log('Incorrect user object passed.');
             return null;
         }
         const spotifyApi = authenticateAPI(user);
-
-        // Get a playlist
-        const data = await spotifyApi.getPlaylist(playlistId, {limit: 100});
-        const tracks = await spotifyApi.getPlaylistTracks(playlistId);
-        const allTracks = await getAllTracks(spotifyApi, playlistId, 0, [], tracks.body);
-        data.body.tracks.items = allTracks;
-        return data.body;
+        try {
+            // Get a playlist
+            const data = await spotifyApi.getPlaylist(playlistId, {
+                limit: 100,
+            });
+            const tracks = await spotifyApi.getPlaylistTracks(playlistId);
+            const allTracks = await getAllTracks(
+                spotifyApi,
+                playlistId,
+                0,
+                [],
+                tracks.body
+            );
+            data.body.tracks.items = allTracks;
+            return data.body;
+        } catch (err) {
+            console.log(err);
+        }
 
         /* Alternative way with then and Promise:
         return new Promise(function (resolve, reject) {
@@ -54,34 +65,29 @@ module.exports = {
     /**
      * returns all Playlists of a user
      * @param user the user object which needs to have an access_token and refresh_token
-     * @ returns {Promise<String>} Promise containing a list of all playlists
+     * @returns {Promise<unknown>} Promise containing a list of all playlists
      */
     getUserPlaylistsSpotify: async function (user) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.')
+            console.log('Incorrect user object passed.');
             return null;
         }
         const spotifyApi = authenticateAPI(user);
-
-        const data = await spotifyApi.getUserPlaylists(undefined);
-        const allPlaylists = await getAllUserPlaylists(spotifyApi, 0, [], data.body);
-        return allPlaylists;
-
-        /*
-        // Alternative way with then and Promise:
-        return new Promise(function (resolve, reject) {
-            spotifyApi.getUserPlaylists(undefined)
-                .then(async function (data) {
-                    const allPlaylists = await getAllUserPlaylists(spotifyApi, 0, [], data.body);
-                    resolve(allPlaylists);
-                }, function(err) {
-                    console.log('Something went wrong!', err);
-                    reject(err);
-                });
-        });
-         */
+        try {
+            const data = await spotifyApi.getUserPlaylists(undefined);
+            const allPlaylists = await getAllUserPlaylists(
+                spotifyApi,
+                0,
+                [],
+                data.body
+            );
+            return allPlaylists;
+        } catch (err) {
+            console.log(err);
+        }
     },
+
     /**
      * Follows a playlist on spotify
      * @param user current user
@@ -91,14 +97,18 @@ module.exports = {
     followPlaylistSpotify: async function (user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.')
+            console.log('Incorrect user object passed.');
             return null;
         }
         const spotifyApi = authenticateAPI(user);
 
-        const result = await spotifyApi.followPlaylist(playlistId);
-        console.log(result);
-        return result;
+        try {
+            const result = await spotifyApi.followPlaylist(playlistId);
+            console.log(result);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
     },
     /**
      * Search for tracks on spotify
@@ -109,15 +119,50 @@ module.exports = {
     searchTracksSpotify: async function (user, trackName) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.')
+            console.log('Incorrect user object passed.');
             return null;
         }
         const spotifyApi = authenticateAPI(user);
-
-        const result = await spotifyApi.searchTracks(trackName);
-        return result;
+        try {
+            const result = await spotifyApi.searchTracks(trackName);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
     },
-}
+    getAudioFeaturesForTracks: async function (user, trackIds) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        try {
+            const result = await spotifyApi.getAudioFeaturesForTracks(trackIds);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+    addSongToPlaylist: async function (user, songId, playlistId) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        try {
+            const uri = 'spotify:track:' + songId;
+            const result = await spotifyApi.addTracksToPlaylist(
+                playlistId,
+                [uri]
+            );
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+};
 
 /**
  * concats playlists through pagination of Spotify API
@@ -127,11 +172,19 @@ module.exports = {
  * @param firstResponse response of the first request
  * @returns {Promise<*>} Promise containing array of all playlists
  */
-async function getAllUserPlaylists(spotifyApi, offset, allPlaylists, firstResponse) {
+async function getAllUserPlaylists(
+    spotifyApi,
+    offset,
+    allPlaylists,
+    firstResponse
+) {
     while (!!firstResponse?.next) {
         allPlaylists = allPlaylists.concat(firstResponse.items);
         offset += 20;
-        firstResponse = await spotifyApi.getUserPlaylists(undefined, {limit: 20, offset: offset});
+        firstResponse = await spotifyApi.getUserPlaylists(undefined, {
+            limit: 20,
+            offset: offset,
+        });
         firstResponse = firstResponse?.body;
     }
     allPlaylists = allPlaylists.concat(firstResponse.items);
@@ -147,15 +200,22 @@ async function getAllUserPlaylists(spotifyApi, offset, allPlaylists, firstRespon
  * @param firstResponse
  * @returns {Promise<*>} Promise of array with all tracks
  */
-async function getAllTracks(spotifyApi, playlistId, offset, allTracks, firstResponse) {
+async function getAllTracks(
+    spotifyApi,
+    playlistId,
+    offset,
+    allTracks,
+    firstResponse
+) {
     while (!!firstResponse?.next) {
         allTracks = allTracks.concat(firstResponse.items);
         offset += 100;
-        firstResponse = await spotifyApi.getPlaylistTracks(playlistId, { limit: 100, offset: offset})
+        firstResponse = await spotifyApi.getPlaylistTracks(playlistId, {
+            limit: 100,
+            offset: offset,
+        });
         firstResponse = firstResponse.body;
     }
     allTracks = allTracks.concat(firstResponse.items);
     return allTracks;
 }
-
-
