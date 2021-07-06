@@ -19,14 +19,7 @@ const create = async (req, res) => {
 
     // handle the request
     try {
-        // create playlist in database
-        let playlist = await createPlaylistDatabase(req.body, req.userId)
-
-        // add playlist id to users playlists
-        let user_playlists = await UserModel.update(
-            { _id: req.userId },
-            { $addToSet: { playlists: playlist._id } }
-        ).exec();
+        const playlist = addPlaylist(req.body, req.userId);
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {
@@ -37,6 +30,40 @@ const create = async (req, res) => {
         });
     }
 };
+
+const addPlaylist = async (playlist, userId) => {
+    // create playlist in database
+    const createdPlaylist = await createPlaylistDatabase(playlist, userId)
+
+    // add playlist id to users playlists
+    let user_playlists = await UserModel.update(
+        { _id: userId },
+        { $addToSet: { playlists: createdPlaylist._id } }
+    ).exec();
+    return createdPlaylist;
+}
+
+const copy = async (req, res) => {
+    const playlistId = req.params.id;
+    const userId = req.userId;
+    console.log('playlistId: ', playlistId);
+    console.log('userId: ', userId);
+
+    try {
+        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        delete playlist._id;
+        console.log('playlist: ', playlist);
+        const newPlaylist = await addPlaylist(playlist, userId);
+        return res.status(201).json(newPlaylist);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+
+}
 
 const createPlaylistDatabase = async (body, userId) => {
     console.log(body, userId)
@@ -324,6 +351,7 @@ const add_song = async (req, res) => {
 
 module.exports = {
     create,
+    copy,
     update,
     read,
     remove,

@@ -31,4 +31,6 @@ router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistControll
 
 router.put("/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song)
 
+router.put("/copy/:id", middlewares.checkAuthentication, PlaylistController.copy)
+
 module.exports = router;
