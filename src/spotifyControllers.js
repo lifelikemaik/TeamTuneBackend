@@ -11,7 +11,28 @@ function authenticateAPI(user) {
         refreshToken: user.refresh_token,
         accessToken: user.access_token,
     });
-    return spotifyApi;
+    const now = new Date();
+    const tokenRefreshEarly = new Date(now.getTime() + 30 * 60000);
+    if (tokenRefreshEarly >= user.token_refreshdate) {
+        const tokenExpired = new Date(now.getTime() + 60 * 60000);
+        spotifyApi.refreshAccessToken().then(
+            function(data) {
+                console.log('The access token has been refreshed!');
+                spotifyApi.setAccessToken(data.body['access_token']);
+                console.log(user.access_token);
+                user.set('access_token', data.body['access_token']);
+                user.set('token_refreshdate', tokenExpired);
+                user.save();
+            },
+            function(err) {
+                console.log('Could not refresh access token', err);
+            }
+        );
+
+    } else {
+        console.log("no refresh in spotifycontroller");
+        return spotifyApi;
+    }
 }
 
 module.exports = {

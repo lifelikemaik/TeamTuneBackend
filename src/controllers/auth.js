@@ -37,7 +37,7 @@ const login = async (req, res) => {
 
         // get access token and check expiration date
         const now = new Date();
-        const tokenexpired = now.setHours(now.getHours()+1);
+        const tokenExpired = new Date(now.getTime() + 60*60000);
         if (now >= user.token_refreshdate){
             console.log("refresh");
             console.log(user.access_token);
@@ -56,7 +56,7 @@ const login = async (req, res) => {
                     spotifyApi.setAccessToken(data.body['access_token']);
                     console.log(user.access_token);
                     user.set('access_token', data.body['access_token']);
-                    user.set('token_refreshdate', tokenexpired);
+                    user.set('token_refreshdate', tokenExpired);
                     user.save();
                 },
                 function(err) {
@@ -67,7 +67,7 @@ const login = async (req, res) => {
 
         }
         else {
-            console.log("retrieve token");
+            console.log("retrieve token, no refresh");
             console.log(user.access_token);
         }
 
