@@ -17,9 +17,7 @@ function authenticateAPI(user) {
         const tokenExpired = new Date(now.getTime() + 60 * 60000);
         spotifyApi.refreshAccessToken().then(
             function(data) {
-                console.log('The access token has been refreshed!');
                 spotifyApi.setAccessToken(data.body['access_token']);
-                console.log(user.access_token);
                 user.set('access_token', data.body['access_token']);
                 user.set('token_refreshdate', tokenExpired);
                 user.save();
@@ -28,7 +26,7 @@ function authenticateAPI(user) {
                 console.log('Could not refresh access token', err);
             }
         );
-
+        return spotifyApi;
     } else {
         console.log("no refresh in spotifycontroller");
         return spotifyApi;
