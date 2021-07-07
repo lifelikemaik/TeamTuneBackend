@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const config = require("./config");
 
 const UserModel = require("./models/user");
+const PlaylistModel = require("./models/playlist");
 
 const allowCrossDomain = (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -76,4 +77,5 @@ module.exports = {
     checkAuthentication,
     checkIsAdmin,
     errorHandler,
+    getUserId,
 };

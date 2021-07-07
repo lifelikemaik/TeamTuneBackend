@@ -230,6 +230,7 @@ const playlistContained = (id, playlists) => {
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId) => {
     return {
+        owner: userId,
         title: playlist.name || "NO NAME",
         publicity: false,
         spotify_id: playlist.id,
