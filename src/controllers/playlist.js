@@ -187,7 +187,7 @@ const list_user_playlists = async (req, res) => {
             for (let i in spotify_playlists) {
                 if(playlistContained(spotify_playlists[i].id, playlists.playlists)){
                     // Playlist already included in Database but might need updating
-                    await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id));
+                    await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id, req.userId));
                 } else {
                     // Playlist is not included yet and has to be created in TeamTune
                     await createPlaylistDatabase(packPlaylist(spotify_playlists[i], user.spotify_id), req.userId);
@@ -229,9 +229,9 @@ const playlistContained = (id, playlists) => {
 }
 
 // creating a object with all relevant data to create a playlist
-const packPlaylist = (playlist, spotifyId) => {
+const packPlaylist = (playlist, spotifyId, userId) => {
     return {
-        owner: playlist.owner.id, //das ist bei mir falsch, danke ich selber
+        owner: userId,
         title: playlist.name || "NO NAME",
         publicity: false,
         spotify_id: playlist.id,
@@ -251,8 +251,9 @@ const packPlaylist = (playlist, spotifyId) => {
     }
 };
 
-const packPlaylistUpdate = (playlist, spotifyId) => {
+const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     return {
+        owner: userId,
         title: playlist.name || "NO NAME",
         publicity: false,
         spotify_id: playlist.id,
