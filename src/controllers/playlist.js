@@ -8,6 +8,7 @@ const https = require('https');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
+const { getRecommendationsSpotify } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -230,7 +231,7 @@ const playlistContained = (id, playlists) => {
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId) => {
     return {
-        owner: userId,
+        owner: playlist.owner.id, //das ist bei mir falsch, danke ich selber
         title: playlist.name || "NO NAME",
         publicity: false,
         spotify_id: playlist.id,
@@ -259,6 +260,32 @@ const packPlaylistUpdate = (playlist, spotifyId) => {
         track_count: playlist.tracks.total,
         image_url: playlist.images[0]?.url || null,
     }
+};
+
+/**
+ *
+ spotifyApi.getRecommendations({
+      min_energy: 0.4,
+      seed_artists: ['6mfK6Q2tzLMEchAr0e9Uzu', '4DYFVNKZ1uixa6SQTvzQwJ'],
+      min_popularity: 50
+    })
+ .then(function(data) {
+    let recommendations = data.body;
+    console.log(recommendations);
+  }, function(err) {
+    console.log("Something went wrong!", err);
+  });
+ */
+
+const get_Recommendations = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+        const request = await getRecommendationsSpotify(user);
+        return res.status(200).json(request);
+    } catch (e) {
+        console.log(e);
+    }
+
 };
 
 const find_song = async (req, res) => {
@@ -333,4 +360,5 @@ module.exports = {
     list_user_playlists,
     find_song,
     add_song,
+    get_Recommendations,
 };

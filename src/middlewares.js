@@ -47,6 +47,53 @@ const checkAuthentication = (req, res, next) => {
     });
 };
 
+const getUserId = async (req, res, next) => {
+
+
+    /*
+    console.log(req.get('host'));
+    console.log(req.query);
+    console.log(req.id);
+    console.log(req.params);
+    console.log(req.params.id);
+
+    console.log(req.headers);
+    console.log(req.originalUrl);
+    console.log(req.url);
+    console.log(req.protocol + '://' + req.get('host') + req.originalUrl);
+
+    let playlist = await PlaylistModel.find({"spotify_id": "60e5f03d5a3dec01402185c0"}, function(err, data){
+        console.log(data);
+    });
+    */
+
+    /**
+     * if 60e5e9c071d37737e8167e51 also nur tumetune ID
+     *
+     */
+    try{
+        let playlist = await PlaylistModel.findOne({
+            _id: new ObjectId("60e64c66583f232f84464381"),
+        }).exec();
+
+        console.log(playlist.owner);
+    }catch (e) {
+        console.log(e);
+    }
+
+    //let user = await UserModel.findById();
+
+    // erstmal hardcode rein mit playlist
+    // check header or url parameters or post parameters for userId
+
+
+
+    // if everything is good, save to request for use in other routes
+    //req.userId = decoded._id;
+    next();
+
+};
+
 const checkIsAdmin = async (req, res, next) => {
     // checkAuthentication must be executed before this method
     // if not req.userId is not defined

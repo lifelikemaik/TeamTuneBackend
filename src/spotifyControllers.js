@@ -181,6 +181,26 @@ module.exports = {
             console.log(err);
         }
     },
+    getRecommendationsSpotify: async function (user){
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        spotifyApi.getRecommendations({
+            min_energy: 0.4,
+            seed_tracks: ['0y8UKPyJOluqIuacosTKEv', '11okWHVPhkyee28xjhrahk'],
+            min_popularity: 30
+        })
+            .then(function(data) {
+                let recommendations = data.body;
+                console.log("bruder musss los");
+                console.log(recommendations);
+            }, function(err) {
+                console.log("Something went wrong!", err);
+            });
+
+    }
 };
 
 /**
