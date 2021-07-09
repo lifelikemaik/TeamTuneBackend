@@ -15,7 +15,6 @@ const { getPlaylistSpotify } = require('../spotifyControllers');
 const { getAllTrackIDs } = require('../spotifyControllers');
 
 
-
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (Object.keys(req.body).length === 0)
@@ -103,7 +102,7 @@ const updatePlaylistDatabase = async (packPlaylistUpdate) => {
 const read = async (req, res) => {
     try {
         let playlistId = req.params.id;
-        if((req.params.id).length != 24){
+        if ((req.params.id).length != 24) {
             playlistId = convertPublicToPrivateId(req.params.id);
         }
         // get playlist with id from database
@@ -247,7 +246,6 @@ const playlistContained = (id, playlists) => {
 };
 
 
-
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId, userId) => {
     return {
@@ -304,17 +302,30 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
 const getEstimatedAmount = async (req, res) => {
     // retrieve playlist target time and current time
     // song 2 min, 120000 ms
-}
+};
 
 const get_Recommendations = async (req, res) => {
     try {
-        console.log("bruder musss los");
+        console.log('bruder musss los');
         const user = await UserModel.findById(req.userId);
-        const requestTracks = await getAllTrackIDs(user, '37i9dQZF1DX4wG1zZBw7hm');
-        console.log(requestTracks);
-        const request = await getRecommendationsSpotify(user, requestTracks, 4);
-        console.log("WALLLAAAHHH RECOMMENDs: " + request);
-        return res.status(200).json(request);
+        let requestAllTracks = await getAllTrackIDs(user, '37i9dQZF1DWZVU32KsYGUK');
+        if (requestAllTracks.length <= 6) {
+            let request = await getRecommendationsSpotify(user, requestAllTracks.slice(0, 5), 10);
+            console.log('WALLLAAAHHH RECOMMENDs mit weniger gleich 6: ' + request);
+            return res.status(200).json(request);
+        } else {
+            let randomSelection = [];
+            while (randomSelection.length < 5) {
+                let r = Math.floor(Math.random() * 100) + 1;
+                if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
+            }
+            let trackRandoms = [];
+            randomSelection.forEach(number => trackRandoms.push(requestAllTracks[number]));
+            let request = await getRecommendationsSpotify(user, trackRandoms, 3);
+            console.log('WALLLAAAHHH RECOMMENDs goennt richtig mit random 6: ' + request);
+            return res.status(200).json(request);
+        }
+
     } catch (err) {
         console.log('err: ', err);
         return res.status(500).json({
@@ -333,15 +344,15 @@ const fill_with_Recommendations = async (req, res) => {
 const get_playlist_time = async (req, res) => {
     try {
         //retrieve playlistID ????? req.params.id not working
-        console.log("get rekked: "+ req.params.id);
+        console.log('get rekked: ' + req.params.id);
         const user = await UserModel.findById(req.userId);
         const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX4wG1zZBw7hm');
         let time = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
-            time += requestPlaylist.tracks.items[i]["track"].duration_ms;
+            time += requestPlaylist.tracks.items[i]['track'].duration_ms;
         }
         const timeInMin = (time / 60000);
-        console.log("playtime in mins: " + timeInMin);
+        console.log('playtime in mins: ' + timeInMin);
         return res.status(200).json(timeInMin);
     } catch (err) {
         console.log(err);
@@ -350,7 +361,7 @@ const get_playlist_time = async (req, res) => {
             message: err.message
         });
     }
-}
+};
 
 const find_song = async (req, res) => {
     try {

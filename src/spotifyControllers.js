@@ -189,7 +189,7 @@ module.exports = {
             return null;
         }
         const spotifyApi = authenticateAPI(user);
-        const request = await spotifyApi.getPlaylist('37i9dQZF1DX4wG1zZBw7hm');
+        const request = await spotifyApi.getPlaylist(playlistID);
         const requestPlaylist = request.body;
         //console.log(requestPlaylist);
         const trackSet = new Set(); // remove duplicates with Set
@@ -207,10 +207,11 @@ module.exports = {
             return null;
         }
         const spotifyApi = authenticateAPI(user);
+        console.log(tracks);
         spotifyApi.getRecommendations({
             min_energy: 0.4,
             seed_tracks: [tracks],
-            min_popularity: 50,
+            min_popularity: 1,
             limit: limit
         })
             .then(function(data) {
