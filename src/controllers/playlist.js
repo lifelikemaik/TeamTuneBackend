@@ -1,7 +1,7 @@
 'use strict';
 
-const express = require("express");
-const {getUserPlaylistsSpotify} = require("../spotifyControllers");
+const express = require('express');
+const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
@@ -9,6 +9,7 @@ const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
 const { getRecommendationsSpotify } = require('../spotifyControllers');
+const { getPlaylistSpotify } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -231,8 +232,8 @@ const playlistContained = (id, playlists) => {
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId, userId) => {
     return {
-        owner: userId,
-        title: playlist.name || "NO NAME",
+        owner: playlist.owner.id,
+        title: playlist.name || 'NO NAME',
         publicity: false,
         spotify_id: playlist.id,
         is_own_playlist: (playlist.owner.id === spotifyId),
@@ -253,8 +254,8 @@ const packPlaylist = (playlist, spotifyId, userId) => {
 
 const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     return {
-        owner: userId,
-        title: playlist.name || "NO NAME",
+        owner: playlist.owner.id,
+        title: playlist.name || 'NO NAME',
         publicity: false,
         spotify_id: playlist.id,
         description: playlist.description,
@@ -280,6 +281,7 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
 
 const get_Recommendations = async (req, res) => {
     try {
+        console.log("Bruder muss vielleicht los.");
         const user = await UserModel.findById(req.userId);
         const request = await getRecommendationsSpotify(user);
         return res.status(200).json(request);
@@ -288,6 +290,32 @@ const get_Recommendations = async (req, res) => {
     }
 
 };
+
+const fill_with_Recommendations = async (req, res) => {
+    // get time left and time now
+};
+
+const get_playlist_time = async (req, res) => {
+    try {
+        //retrieve playlistID ?????
+        const user = await UserModel.findById(req.userId);
+        const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX4wG1zZBw7hm');
+        const dataJSON = JSON.parse(requestPlaylist.tracks.items);
+        let time = 0;
+
+        dataJSON.forEach(obj => {
+            Object.entries(obj).forEach(([key, value]) => {
+                console.log(`${key} ${value}`);
+            });
+            console.log('-------------------');
+        });
+
+        //console.log(requestPlaylist);
+        return res.status(200);
+    } catch (e) {
+        console.log(e);
+    }
+}
 
 const find_song = async (req, res) => {
     try {
@@ -362,4 +390,5 @@ module.exports = {
     find_song,
     add_song,
     get_Recommendations,
+    get_playlist_time
 };

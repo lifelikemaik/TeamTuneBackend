@@ -52,6 +52,7 @@ module.exports = {
             const data = await spotifyApi.getPlaylist(playlistId, {
                 limit: 100,
             });
+            console.log("DATA" + data);
             const tracks = await spotifyApi.getPlaylistTracks(playlistId);
             const allTracks = await getAllTracks(
                 spotifyApi,
@@ -239,6 +240,8 @@ async function getAllUserPlaylists(
  * @param firstResponse
  * @returns {Promise<*>} Promise of array with all tracks
  */
+//sicher, dass wir das brauchen: https://maikluuba.ch/repo/alltracks.json
+// legit nur name vom lied und interpreten --> siehe https://developer.spotify.com/console/get-playlist-tracks/
 async function getAllTracks(
     spotifyApi,
     playlistId,
