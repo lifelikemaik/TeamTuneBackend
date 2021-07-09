@@ -1,10 +1,12 @@
 'use strict';
-
+const SHA256 = require('crypto-js/sha256');
 const express = require('express');
 const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
+const mongoose = require('mongoose');
+const ObjectId = require('mongoose');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
@@ -279,41 +281,49 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
   });
  */
 
+const getAllTrackIDs = async (req, res) => {
+
+}
+
 const get_Recommendations = async (req, res) => {
     try {
-        console.log("Bruder muss vielleicht los.");
+        console.log("bruder musss los");
         const user = await UserModel.findById(req.userId);
         const request = await getRecommendationsSpotify(user);
         return res.status(200).json(request);
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log('err: ', err);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: err.message
+        });
     }
 
 };
 
 const fill_with_Recommendations = async (req, res) => {
-    // get time left and time now
+    // get time left and time now --> multiple get Recomms
 };
 
+// if spotify id vorhanden
 const get_playlist_time = async (req, res) => {
     try {
         //retrieve playlistID ?????
         const user = await UserModel.findById(req.userId);
         const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX4wG1zZBw7hm');
-        const dataJSON = JSON.parse(requestPlaylist.tracks.items);
         let time = 0;
-
-        dataJSON.forEach(obj => {
-            Object.entries(obj).forEach(([key, value]) => {
-                console.log(`${key} ${value}`);
-            });
-            console.log('-------------------');
+        for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
+            time += requestPlaylist.tracks.items[i]["track"].duration_ms;
+        }
+        const timeInMin = (time / 60000);
+        console.log("playtime in mins: " + timeInMin);
+        return res.status(200).json(timeInMin);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
         });
-
-        //console.log(requestPlaylist);
-        return res.status(200);
-    } catch (e) {
-        console.log(e);
     }
 }
 

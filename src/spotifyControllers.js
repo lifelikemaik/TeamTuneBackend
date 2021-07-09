@@ -52,7 +52,6 @@ module.exports = {
             const data = await spotifyApi.getPlaylist(playlistId, {
                 limit: 100,
             });
-            console.log("DATA" + data);
             const tracks = await spotifyApi.getPlaylistTracks(playlistId);
             const allTracks = await getAllTracks(
                 spotifyApi,
@@ -191,11 +190,11 @@ module.exports = {
         spotifyApi.getRecommendations({
             min_energy: 0.4,
             seed_tracks: ['0y8UKPyJOluqIuacosTKEv', '11okWHVPhkyee28xjhrahk'],
-            min_popularity: 30
+            min_popularity: 40,
+            limit: 10
         })
             .then(function(data) {
                 let recommendations = data.body;
-                console.log("bruder musss los");
                 console.log(recommendations);
             }, function(err) {
                 console.log("Something went wrong!", err);
