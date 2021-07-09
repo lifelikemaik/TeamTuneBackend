@@ -12,19 +12,22 @@ const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
 const { getRecommendationsSpotify } = require('../spotifyControllers');
 const { getPlaylistSpotify } = require('../spotifyControllers');
+const { getAllTrackIDs } = require('../spotifyControllers');
+
+
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (Object.keys(req.body).length === 0)
         return res.status(400).json({
             error: 'Bad Request',
-            message: 'The request body is empty',
+            message: 'The request body is empty'
         });
 
     // handle the request
     try {
         // create playlist in database
-        let playlist = await createPlaylistDatabase(req.body, req.userId)
+        let playlist = await createPlaylistDatabase(req.body, req.userId);
 
         // add playlist id to users playlists
         let user_playlists = await UserModel.update(
@@ -37,29 +40,29 @@ const create = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
 
 const createPlaylistDatabase = async (body, userId) => {
-    console.log(body, userId)
+    console.log(body, userId);
     // create playlist in database
     let playlist = await PlaylistModel.create(body);
     // add playlist id to users playlists
     await UserModel.update(
-        {_id: userId},
-        {$addToSet: {playlists: playlist._id}}
+        { _id: userId },
+        { $addToSet: { playlists: playlist._id } }
     ).exec();
     return playlist;
-}
+};
 
 const update = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (Object.keys(req.body).length === 0) {
         return res.status(400).json({
             error: 'Bad Request',
-            message: 'The request body is empty',
+            message: 'The request body is empty'
         });
     }
 
@@ -71,7 +74,7 @@ const update = async (req, res) => {
             req.body,
             {
                 new: true,
-                runValidators: true,
+                runValidators: true
             }
         ).exec();
 
@@ -81,32 +84,36 @@ const update = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
 
 const updatePlaylistDatabase = async (packPlaylistUpdate) => {
     let playlist = await PlaylistModel.findOneAndUpdate(
-        {spotify_id: packPlaylistUpdate.spotify_id},
+        { spotify_id: packPlaylistUpdate.spotify_id },
         packPlaylistUpdate,
         {
-            new: true,
+            new: true
         }
     ).exec();
     return playlist;
-}
+};
 
 const read = async (req, res) => {
     try {
+        let playlistId = req.params.id;
+        if((req.params.id).length != 24){
+            playlistId = convertPublicToPrivateId(req.params.id);
+        }
         // get playlist with id from database
-        let playlist = await PlaylistModel.findById(req.params.id).exec();
+        let playlist = await PlaylistModel.findById(playlistId).exec();
 
         // if no playlist with id is found, return 404
         if (!playlist)
             return res.status(404).json({
                 error: 'Not Found',
-                message: `Playlist not found`,
+                message: `Playlist not found`
             });
 
         // return gotten playlist
@@ -115,7 +122,7 @@ const read = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -133,7 +140,7 @@ const remove = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -149,7 +156,7 @@ const list = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -157,7 +164,7 @@ const list = async (req, res) => {
 const list_public = async (req, res) => {
     try {
         // get all public playlists in database
-        let playlists = await PlaylistModel.find({publicity: true}).exec();
+        let playlists = await PlaylistModel.find({ publicity: true }).exec();
 
         // return gotten playlists
         console.log(playlists);
@@ -166,7 +173,7 @@ const list_public = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -174,21 +181,21 @@ const list_public = async (req, res) => {
 const list_user_playlists = async (req, res) => {
     try {
         const user = await UserModel.findOne({
-            _id: req.userId,
+            _id: req.userId
         }).exec();
 
         // get user playlists from database
         let playlists = await UserModel.findById(req.userId)
             .lean()
-            .populate("playlists")
-            .select("playlists")
+            .populate('playlists')
+            .select('playlists')
             .exec();
 
         if (user) {
             const spotify_playlists = await getUserPlaylistsSpotify(user);
 
             for (let i in spotify_playlists) {
-                if(playlistContained(spotify_playlists[i].id, playlists.playlists)){
+                if (playlistContained(spotify_playlists[i].id, playlists.playlists)) {
                     // Playlist already included in Database but might need updating
                     await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id, req.userId));
                 } else {
@@ -200,26 +207,34 @@ const list_user_playlists = async (req, res) => {
         // get user playlists from database
         playlists = await UserModel.findById(req.userId)
             .lean()
-            .populate("playlists")
-            .select("playlists")
+            .populate('playlists')
+            .select('playlists')
             .exec();
 
         return res.status(200).json(playlists.playlists);
     } catch (err) {
         console.log('err: ', err);
         return res.status(500).json({
-            error: "Internal Server Error",
-            message: err.message,
+            error: 'Internal Server Error',
+            message: err.message
         });
     }
 };
 
+const convertPublicToPrivateId = async (publicId) => {
+    let privateId = await PlaylistModel.findOne({
+        public_id: publicId
+    })
+        .select(_id)
+        .exec();
+    return privateId;
+};
 
 
 // Check if playlist creator matches users spotify id
 const is_user_playlist = (ownerId, spotifyId) => {
     return (ownerId === spotifyId);
-}
+};
 
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
@@ -229,19 +244,21 @@ const playlistContained = (id, playlists) => {
         }
     }
     return false;
-}
+};
+
+
 
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId, userId) => {
     return {
-        owner: playlist.owner.id,
+        owner: userId,
+        public_id: SHA256(playlist.id).toString(),
         title: playlist.name || 'NO NAME',
         publicity: false,
         spotify_id: playlist.id,
         is_own_playlist: (playlist.owner.id === spotifyId),
         description: playlist.description,
         track_count: playlist.tracks.total,
-        share_link: "",
         image_url: playlist.images[0]?.url || null,
         joined_people: [],
         is_teamtune_playlist: false,
@@ -249,21 +266,22 @@ const packPlaylist = (playlist, spotifyId, userId) => {
             durations_ms: 0,
             duration_target: 0,
             songs: [],
-            number_songs: 0,
-        },
-    }
+            number_songs: 0
+        }
+    };
 };
 
 const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     return {
-        owner: playlist.owner.id,
+        owner: userId,
+        public_id: SHA256(playlist.id).toString(),
         title: playlist.name || 'NO NAME',
         publicity: false,
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
-        image_url: playlist.images[0]?.url || null,
-    }
+        image_url: playlist.images[0]?.url || null
+    };
 };
 
 /**
@@ -281,15 +299,21 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
   });
  */
 
-const getAllTrackIDs = async (req, res) => {
 
+
+const getEstimatedAmount = async (req, res) => {
+    // retrieve playlist target time and current time
+    // song 2 min, 120000 ms
 }
 
 const get_Recommendations = async (req, res) => {
     try {
         console.log("bruder musss los");
         const user = await UserModel.findById(req.userId);
-        const request = await getRecommendationsSpotify(user);
+        const requestTracks = await getAllTrackIDs(user, '37i9dQZF1DX4wG1zZBw7hm');
+        console.log(requestTracks);
+        const request = await getRecommendationsSpotify(user, requestTracks, 4);
+        console.log("WALLLAAAHHH RECOMMENDs: " + request);
         return res.status(200).json(request);
     } catch (err) {
         console.log('err: ', err);
@@ -308,7 +332,8 @@ const fill_with_Recommendations = async (req, res) => {
 // if spotify id vorhanden
 const get_playlist_time = async (req, res) => {
     try {
-        //retrieve playlistID ?????
+        //retrieve playlistID ????? req.params.id not working
+        console.log("get rekked: "+ req.params.id);
         const user = await UserModel.findById(req.userId);
         const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX4wG1zZBw7hm');
         let time = 0;
@@ -350,12 +375,12 @@ const find_song = async (req, res) => {
                     artists: spotifySong.artists.map((artist) => {
                         return {
                             id: artist.id,
-                            name: artist.name,
+                            name: artist.name
                         };
                     }),
                     audio_features: audioFeatures.find(
                         (element) => element.id === spotifySong.id
-                    ),
+                    )
                 };
             });
             //console.log('songs: ', songs);
@@ -366,7 +391,7 @@ const find_song = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -384,7 +409,7 @@ const add_song = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -400,5 +425,6 @@ module.exports = {
     find_song,
     add_song,
     get_Recommendations,
-    get_playlist_time
+    get_playlist_time,
+    getAllTrackIDs
 };

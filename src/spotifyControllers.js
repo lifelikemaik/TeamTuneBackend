@@ -9,7 +9,7 @@ function authenticateAPI(user) {
         clientSecret: config.client_secret,
         redirectUri: 'http://localhost:4000/callback/login',
         refreshToken: user.refresh_token,
-        accessToken: user.access_token,
+        accessToken: user.access_token
     });
     const now = new Date();
     const tokenRefreshEarly = new Date(now.getTime() + 30 * 60000);
@@ -28,7 +28,7 @@ function authenticateAPI(user) {
         );
         return spotifyApi;
     } else {
-        console.log("no refresh in spotifycontroller");
+        console.log('no refresh in spotifycontroller');
         return spotifyApi;
     }
 }
@@ -40,7 +40,7 @@ module.exports = {
      * @param playlistId
      * @returns {Promise<null|*>} Promise of playlist object
      */
-    getPlaylistSpotify: async function (user, playlistId) {
+    getPlaylistSpotify: async function(user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -50,7 +50,7 @@ module.exports = {
         try {
             // Get a playlist
             const data = await spotifyApi.getPlaylist(playlistId, {
-                limit: 100,
+                limit: 100
             });
             const tracks = await spotifyApi.getPlaylistTracks(playlistId);
             const allTracks = await getAllTracks(
@@ -86,7 +86,7 @@ module.exports = {
      * @param user the user object which needs to have an access_token and refresh_token
      * @returns {Promise<unknown>} Promise containing a list of all playlists
      */
-    getUserPlaylistsSpotify: async function (user) {
+    getUserPlaylistsSpotify: async function(user) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -113,7 +113,7 @@ module.exports = {
      * @param playlistId id of playlist to follow
      * @returns {Promise<*|null>} http response of spotify api
      */
-    followPlaylistSpotify: async function (user, playlistId) {
+    followPlaylistSpotify: async function(user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -135,7 +135,7 @@ module.exports = {
      * @param trackName name of track, album or artist
      * @returns result http response of spotify api
      */
-    searchTracksSpotify: async function (user, trackName) {
+    searchTracksSpotify: async function(user, trackName) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -149,7 +149,7 @@ module.exports = {
             console.log(err);
         }
     },
-    getAudioFeaturesForTracks: async function (user, trackIds) {
+    getAudioFeaturesForTracks: async function(user, trackIds) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -163,7 +163,7 @@ module.exports = {
             console.log(err);
         }
     },
-    addSongToPlaylist: async function (user, songId, playlistId) {
+    addSongToPlaylist: async function(user, songId, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -181,7 +181,27 @@ module.exports = {
             console.log(err);
         }
     },
-    getRecommendationsSpotify: async function (user){
+    getAllTrackIDs:  async function(user, playlistID) {
+        //retrieve playlistID ????? req.params.id not working
+        // console.log("get rekked: "+ req.params.id);
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        const request = await spotifyApi.getPlaylist('37i9dQZF1DX4wG1zZBw7hm');
+        const requestPlaylist = request.body;
+        //console.log(requestPlaylist);
+        const trackSet = new Set(); // remove duplicates with Set
+        for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
+            trackSet.add(requestPlaylist.tracks.items[i]['track'].id);
+        }
+        const tracksArray = Array.from(trackSet);
+        const trackJSON = JSON.parse(JSON.stringify(tracksArray));
+        //console.log(trackJSON)
+        return trackJSON;
+    },
+    getRecommendationsSpotify: async function(user, tracks, limit) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
@@ -189,15 +209,15 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         spotifyApi.getRecommendations({
             min_energy: 0.4,
-            seed_tracks: ['0y8UKPyJOluqIuacosTKEv', '11okWHVPhkyee28xjhrahk'],
-            min_popularity: 40,
-            limit: 10
+            seed_tracks: [tracks],
+            min_popularity: 50,
+            limit: limit
         })
             .then(function(data) {
                 let recommendations = data.body;
                 console.log(recommendations);
             }, function(err) {
-                console.log("Something went wrong!", err);
+                console.log('Something went wrong!', err);
             });
 
     }
@@ -222,7 +242,7 @@ async function getAllUserPlaylists(
         offset += 20;
         firstResponse = await spotifyApi.getUserPlaylists(undefined, {
             limit: 20,
-            offset: offset,
+            offset: offset
         });
         firstResponse = firstResponse?.body;
     }
@@ -253,7 +273,7 @@ async function getAllTracks(
         offset += 100;
         firstResponse = await spotifyApi.getPlaylistTracks(playlistId, {
             limit: 100,
-            offset: offset,
+            offset: offset
         });
         firstResponse = firstResponse.body;
     }

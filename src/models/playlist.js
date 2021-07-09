@@ -10,7 +10,6 @@ const PlaylistSchema = new mongoose.Schema({
     public_id: String,
     spotify_id: String,
     publicity: Boolean,
-    spotify_id: String,
     title: {
         type: String,
         required: true
