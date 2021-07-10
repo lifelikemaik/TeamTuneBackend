@@ -208,13 +208,12 @@ module.exports = {
         spotifyApi.getRecommendations({
             seed_tracks: [tracks],
             limit: limit,
-            target_popularity: popularity
             target_popularity: popularity,
             market: "DE" // only songs availiable in Germany
         })
             .then(function (data) {
                 let recommendations = data.body;
-                console.log(recommendations);
+                // console.log(recommendations);
                 let resultIDs = [];
                 for (let i = 0; i < recommendations.tracks.length; i++) {
                     resultIDs.push(recommendations.tracks[i].id);
