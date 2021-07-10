@@ -14,6 +14,7 @@ const { getAllTrackIDs } = require('../spotifyControllers');
 const { followPlaylistSpotify } = require('../spotifyControllers');
 
 const { getAveragePopularity } = require('../spotifyControllers');
+const { getPlaylistAverageInfos } = require('../spotifyControllers');
 
 
 const create = async (req, res) => {
@@ -295,6 +296,10 @@ const get_Recommendations = async (req, res) => {
     try {
         // ACHTUNG! manchmal auch duplikate, bei aehnlichen Liedern, kann ein song kommen, der schon in der Playlist drin ist.
         console.log('bruder musss los');
+        /***
+         *
+         * GANZ WICHTIG SPOTIFY ID IST NOTWENDIG
+         */
         const playlistID = '37i9dQZF1E4Bk7dTDvw6nT';
         const user = await UserModel.findById(req.userId);
         const requestTracks = await getAllTrackIDs(user, playlistID);
@@ -304,15 +309,21 @@ const get_Recommendations = async (req, res) => {
         const requestAllTracks = await getAllTrackIDs(user, playlistID);
         const averagePopularity = await getAveragePopularity(user, playlistID);
         console.log("average Popularity of Playlist: " + averagePopularity);
+        const averagePlaylistInfos = await getPlaylistAverageInfos(user, playlistID);
+        const averagePopularity = await averagePlaylistInfos[0];
         if (requestAllTracks.length <= 6) {
             let request = await getRecommendationsSpotify(user, requestAllTracks, 10, averagePopularity);
             console.log('WALLLAAAHHH RECOMMENDs mit weniger gleich 6: ');
             console.log(request);
             return res.status(200).json(request);
+            let requestRecommendation = await getRecommendationsSpotify(user, requestAllTracks, 5, averagePopularity);
+            console.log('mit weniger gleich 6: ');
+            return res.status(200).json(requestRecommendation);
         } else {
             let randomSelection = [];
             while (randomSelection.length < 5) {
                 let r = Math.floor(Math.random() * requestAllTracks.length) - 1;
+                let r = Math.floor(Math.random() * requestAllTracks.length);
                 if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
             }
             let trackRandoms = [];
@@ -321,6 +332,9 @@ const get_Recommendations = async (req, res) => {
             console.log('WALLLAAAHHH RECOMMENDs goennt richtig mit random 6: ' );
             console.log(request);
             return res.status(200).json(request);
+            let requestRecommendation = await getRecommendationsSpotify(user, trackRandoms, 5);
+            console.log('mit random 6: ' );
+            return res.status(200).json(requestRecommendation);
         }
     } catch (err) {
         console.log('err: ', err);

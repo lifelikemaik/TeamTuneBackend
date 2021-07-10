@@ -209,10 +209,18 @@ module.exports = {
             seed_tracks: [tracks],
             limit: limit,
             target_popularity: popularity
+            target_popularity: popularity,
+            market: "DE" // only songs availiable in Germany
         })
             .then(function (data) {
                 let recommendations = data.body;
                 console.log(recommendations);
+                let resultIDs = [];
+                for (let i = 0; i < recommendations.tracks.length; i++) {
+                    resultIDs.push(recommendations.tracks[i].id);
+                }
+                console.log(resultIDs);
+                return resultIDs;
             }, function (err) {
                 console.log('Something went wrong!', err);
             });
@@ -231,6 +239,31 @@ module.exports = {
         }
         return Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
     },
+    getPlaylistAverageInfos: async function (user, playlistID) {
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        const request = await spotifyApi.getPlaylist(playlistID);
+        const requestPlaylist = request.body;
+        let results = [];
+        // [averagePopularity, averageTrackDuration, sumDuration]
+        let sumPopularity = 0;
+        for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
+            sumPopularity += requestPlaylist.tracks.items[i]['track'].popularity;
+        }
+        const averagePopularity = Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
+        results.push(averagePopularity);
+        let sumDuration = 0;
+        for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
+            sumDuration += requestPlaylist.tracks.items[i]['track'].duration_ms;
+        }
+        const averageTrackDuration = Math.floor(sumDuration / requestPlaylist.tracks.items.length);
+        results.push(averageTrackDuration);
+        results.push(sumDuration);
+        return results;
+    }
 };
 
 /**
