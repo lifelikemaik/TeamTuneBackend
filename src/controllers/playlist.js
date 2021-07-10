@@ -244,7 +244,10 @@ const playlistContained = (id, playlists) => {
 };
 
 
-
+/*
+SHA256: The slowest, usually 60% slower than md5, and the longest generated hash (32 bytes).
+The probability of just two hashes accidentally colliding is approximately: 4.3*10-60.
+ */
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId, userId) => {
     return {
@@ -280,21 +283,6 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     };
 };
 
-/**
- *
- spotifyApi.getRecommendations({
-      min_energy: 0.4,
-      seed_artists: ['6mfK6Q2tzLMEchAr0e9Uzu', '4DYFVNKZ1uixa6SQTvzQwJ'],
-      min_popularity: 50
-    })
- .then(function(data) {
-    let recommendations = data.body;
-    console.log(recommendations);
-  }, function(err) {
-    console.log("Something went wrong!", err);
-  });
- */
-
 
 
 const getEstimatedAmount = async (req, res) => {
@@ -304,27 +292,26 @@ const getEstimatedAmount = async (req, res) => {
 
 const get_Recommendations = async (req, res) => {
     try {
-        console.log("bruder musss los");
+        // ACHTUNG! manchmal auch duplikate, bei aehnlichen Liedern, kann ein song kommen, der schon in der Playlist drin ist.
         console.log('bruder musss los');
         const playlistID = '37i9dQZF1E4Bk7dTDvw6nT';
         const user = await UserModel.findById(req.userId);
-        const requestTracks = await getAllTrackIDs(user, '37i9dQZF1DX4wG1zZBw7hm');
+        const requestTracks = await getAllTrackIDs(user, playlistID);
         console.log(requestTracks);
         const request = await getRecommendationsSpotify(user, requestTracks, 4);
         console.log("WALLLAAAHHH RECOMMENDs: " + request);
-        return res.status(200).json(request);
         const requestAllTracks = await getAllTrackIDs(user, playlistID);
         const averagePopularity = await getAveragePopularity(user, playlistID);
-        console.log(averagePopularity);
+        console.log("average Popularity of Playlist: " + averagePopularity);
         if (requestAllTracks.length <= 6) {
-            let request = await getRecommendationsSpotify(user, requestAllTracks.slice(0, 5), 10, averagePopularity);
+            let request = await getRecommendationsSpotify(user, requestAllTracks, 10, averagePopularity);
             console.log('WALLLAAAHHH RECOMMENDs mit weniger gleich 6: ');
             console.log(request);
             return res.status(200).json(request);
         } else {
             let randomSelection = [];
             while (randomSelection.length < 5) {
-                let r = Math.floor(Math.random() * requestAllTracks.length) + 1;
+                let r = Math.floor(Math.random() * requestAllTracks.length) - 1;
                 if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
             }
             let trackRandoms = [];
@@ -344,26 +331,26 @@ const get_Recommendations = async (req, res) => {
 
 };
 
-const fill_with_Recommendations = async (req, res) => {
-    // get time left and time now --> multiple get Recomms
-};
+const get_Full_List_Recommendations = async (req, res) => {
+    // wie get_Recommendations nur in extremo
+    // get time left and time now --> multiple get Recomms, with estimator of songs
+    // --> average song time?
+    // Idee: Rekursiv
+}
 
 // if spotify id vorhanden
 const get_playlist_time = async (req, res) => {
     try {
         //retrieve playlistID ????? req.params.id not working
-        console.log("get rekked: "+ req.params.id);
         console.log('get rekked: ' + req.params.id);
         const user = await UserModel.findById(req.userId);
         const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX4wG1zZBw7hm');
         let time = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
-            time += requestPlaylist.tracks.items[i]["track"].duration_ms;
             time += requestPlaylist.tracks.items[i]['track'].duration_ms;
         }
         const timeInMin = (time / 60000);
         console.log("playtime in mins: " + timeInMin);
-        console.log('playtime in mins: ' + timeInMin);
         return res.status(200).json(timeInMin);
     } catch (err) {
         console.log(err);

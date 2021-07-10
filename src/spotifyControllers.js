@@ -191,15 +191,12 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         const request = await spotifyApi.getPlaylist(playlistID);
         const requestPlaylist = request.body;
-        //console.log(requestPlaylist);
         const trackSet = new Set(); // remove duplicates with Set
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
             trackSet.add(requestPlaylist.tracks.items[i]['track'].id);
         }
         const tracksArray = Array.from(trackSet);
-        const trackJSON = JSON.parse(JSON.stringify(tracksArray));
-        //console.log(trackJSON)
-        return trackJSON;
+        return JSON.parse(JSON.stringify(tracksArray));
     },
     getRecommendationsSpotify: async function (user, tracks, limit, popularity) {
         if (!user || !user.access_token || !user.refresh_token) {
@@ -232,8 +229,7 @@ module.exports = {
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
             sumPopularity += requestPlaylist.tracks.items[i]['track'].popularity;
         }
-        const average = Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
-        return average;
+        return Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
     },
 };
 
