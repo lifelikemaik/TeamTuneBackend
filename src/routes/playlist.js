@@ -22,6 +22,7 @@ router.post("/", middlewares.checkAuthentication, PlaylistController.create); //
 // TODO: Add authentication
 router.put("/:id", PlaylistController.update) // Edit playlist by Id (like title)
 
+router.get("/:id/follow", middlewares.checkAuthentication, PlaylistController.follow) // Follow playlist by Id (like title)
 
 router.delete("/:id", PlaylistController.remove) // Delete playlist by Id
 

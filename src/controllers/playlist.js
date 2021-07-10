@@ -11,6 +11,7 @@ const { searchTracksSpotify } = require('../spotifyControllers');
 const { getRecommendationsSpotify } = require('../spotifyControllers');
 const { getPlaylistSpotify } = require('../spotifyControllers');
 const { getAllTrackIDs } = require('../spotifyControllers');
+const { followPlaylistSpotify } = require('../spotifyControllers');
 
 const { getAveragePopularity } = require('../spotifyControllers');
 
@@ -423,6 +424,27 @@ const add_song = async (req, res) => {
     }
 };
 
+const follow = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+        const playlistId = await convertPublicToPrivateId(req.params.id);
+        const playlist = await PlaylistModel.findOne({
+            _id: playlistId
+        }).exec();
+        const result = await followPlaylistSpotify(
+            user,
+            playlist.spotify_id,
+        );
+        return res.status(200).json(result.body);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
+        });
+    }
+};
+
 module.exports = {
     create,
     update,
@@ -435,5 +457,6 @@ module.exports = {
     add_song,
     get_Recommendations,
     get_playlist_time,
-    getAllTrackIDs
+    getAllTrackIDs,
+    follow,
 };
