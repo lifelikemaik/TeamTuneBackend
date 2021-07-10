@@ -104,7 +104,7 @@ const read = async (req, res) => {
     try {
         let playlistId = req.params.id;
         if((req.params.id).length != 24){
-            playlistId = convertPublicToPrivateId(req.params.id);
+            playlistId = await convertPublicToPrivateId(req.params.id);
         }
         // get playlist with id from database
         let playlist = await PlaylistModel.findById(playlistId).exec();
@@ -164,7 +164,11 @@ const list = async (req, res) => {
 const list_public = async (req, res) => {
     try {
         // get all public playlists in database
-        let playlists = await PlaylistModel.find({ publicity: true }).exec();
+        let playlists = await PlaylistModel.find(
+            { publicity: true }
+        )
+            .select('-_id')
+            .exec();
 
         // return gotten playlists
         console.log(playlists);
@@ -221,14 +225,13 @@ const list_user_playlists = async (req, res) => {
     }
 };
 
-const convertPublicToPrivateId = async (publicId) => {
-    let privateId = await PlaylistModel.findOne({
+async function convertPublicToPrivateId(publicId){
+    let playlist = await PlaylistModel.findOne({
         public_id: publicId
     })
-        .select(_id)
         .exec();
-    return privateId;
-};
+    return playlist._id;
+}
 
 
 // Check if playlist creator matches users spotify id
@@ -276,7 +279,6 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
         owner: userId,
         public_id: SHA256(playlist.id).toString(),
         title: playlist.name || 'NO NAME',
-        publicity: false,
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
