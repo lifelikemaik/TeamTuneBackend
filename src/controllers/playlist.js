@@ -5,8 +5,6 @@ const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
-const mongoose = require('mongoose');
-const ObjectId = require('mongoose');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
@@ -31,7 +29,7 @@ const create = async (req, res) => {
         let playlist = await createPlaylistDatabase(req.body, req.userId);
 
         // add playlist id to users playlists
-        let user_playlists = await UserModel.update(
+        await UserModel.update(
             { _id: req.userId },
             { $addToSet: { playlists: playlist._id } }
         ).exec();
@@ -235,11 +233,6 @@ async function convertPublicToPrivateId(publicId){
 }
 
 
-// Check if playlist creator matches users spotify id
-const is_user_playlist = (ownerId, spotifyId) => {
-    return (ownerId === spotifyId);
-};
-
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
     for (let j in playlists) {
@@ -307,7 +300,6 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
 const getEstimatedAmount = async (req, res) => {
     // retrieve playlist target time and current time
     // song 2 min, 120000 ms
-}
 };
 
 const get_Recommendations = async (req, res) => {
@@ -380,7 +372,6 @@ const get_playlist_time = async (req, res) => {
             message: err.message
         });
     }
-}
 };
 
 const find_song = async (req, res) => {
