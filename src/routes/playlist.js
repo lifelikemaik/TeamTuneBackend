@@ -28,12 +28,18 @@ router.delete("/:id", PlaylistController.remove) // Delete playlist by Id
 
 router.post("/:id", PlaylistMusicController.create) // Adds new Songs to the playlist by Id
 
+/***
+ * checkauthentication fehlt hier
+ */
 router.delete("/:id/:song_id", PlaylistMusicController.remove) // Removes the song by song_id from the playlist with id
 
-//router.get("/songs/:songname", middlewares.getUserId, PlaylistController.find_song)
+router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.find_song)
+
+//router.get("/:id/:songname/invited", PlaylistController.find_song_invited)
 
 router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_Recommendations)
-//router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_playlist_time)
+
+router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_playlist_time)
 //router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.getAllTrackIDs)
 
 

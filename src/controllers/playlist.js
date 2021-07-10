@@ -298,7 +298,7 @@ const get_Recommendations = async (req, res) => {
          *
          * GANZ WICHTIG SPOTIFY ID IST NOTWENDIG
          */
-        const playlistID = '37i9dQZF1DX8NTLI2TtZa6';
+        const playlistID = '3sqMZDGlRyWC27qmRERstj';
         const user = await UserModel.findById(req.userId);
         const requestAllTracks = await getAllTrackIDs(user, playlistID);
         const averagePlaylistInfos = await getPlaylistAverageInfos(user, playlistID);
@@ -343,7 +343,7 @@ const get_playlist_time = async (req, res) => {
         //retrieve playlistID ????? req.params.id not working
         console.log('get rekked: ' + req.params.id);
         const user = await UserModel.findById(req.userId);
-        const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX4wG1zZBw7hm');
+        const requestPlaylist = await getPlaylistSpotify(user, '3sqMZDGlRyWC27qmRERstj');
         let time = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
             time += requestPlaylist.tracks.items[i]['track'].duration_ms;
@@ -360,41 +360,76 @@ const get_playlist_time = async (req, res) => {
     }
 };
 
+const find_song_invited = async (req, res) => {
+    try {
+        console.log("Es fäng an")
+        const playlistId = req.params.id;
+        const playlist = await PlaylistModel.findById(playlistId);
+        const owner = await UserModel.findById(playlist.owner);
+        const songName = req.params.songname;
+
+        if (songName && owner) {
+            const songs = await find_song_helper(owner, songName);
+            return res.status(200).json(songs);
+        }
+        console.log("Es funktioniert")
+        return res.status(400);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
+        });
+    }
+}
+
 const find_song = async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId);
         const songName = req.params.songname;
         if (songName && user) {
-            const request = await searchTracksSpotify(user, songName);
-            const songsFiltered = request.body.tracks.items.filter(
-                (result) => result.type === 'track'
-            );
-            const songIds = songsFiltered.map((song) => song.id);
-            const audioFeaturesResult = await getAudioFeaturesForTracks(
-                user,
-                songIds
-            );
-            const audioFeatures = audioFeaturesResult.body.audio_features;
-            const songs = songsFiltered.map((spotifySong) => {
-                return {
-                    spotify_id: spotifySong.id,
-                    name: spotifySong.name,
-                    duration_ms: spotifySong.duration_ms,
-                    artists: spotifySong.artists.map((artist) => {
-                        return {
-                            id: artist.id,
-                            name: artist.name
-                        };
-                    }),
-                    audio_features: audioFeatures.find(
-                        (element) => element.id === spotifySong.id
-                    )
-                };
-            });
-            //console.log('songs: ', songs);
+            const songs = await find_song_helper(user, songName);
             return res.status(200).json(songs);
         }
         return res.status(400);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
+        });
+    }
+}
+
+const find_song_helper = async (user, songName) => {
+    try {
+        const request = await searchTracksSpotify(user, songName);
+        const songsFiltered = request.body.tracks.items.filter(
+            (result) => result.type === 'track'
+        );
+        const songIds = songsFiltered.map((song) => song.id);
+        const audioFeaturesResult = await getAudioFeaturesForTracks(
+            user,
+            songIds
+        );
+        const audioFeatures = audioFeaturesResult.body.audio_features;
+        const songs = songsFiltered.map((spotifySong) => {
+            return {
+                spotify_id: spotifySong.id,
+                name: spotifySong.name,
+                duration_ms: spotifySong.duration_ms,
+                artists: spotifySong.artists.map((artist) => {
+                    return {
+                        id: artist.id,
+                        name: artist.name
+                    };
+                }),
+                audio_features: audioFeatures.find(
+                    (element) => element.id === spotifySong.id
+                )
+            };
+        })
+        return songs;
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -452,6 +487,7 @@ module.exports = {
     list_public,
     list_user_playlists,
     find_song,
+    find_song_invited,
     add_song,
     get_Recommendations,
     get_playlist_time,
