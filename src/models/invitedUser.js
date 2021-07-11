@@ -8,8 +8,8 @@ const InvitedUserSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    hostID: mongoose.Schema.Types.ObjectId,
-    playlistID: mongoose.Schema.Types.ObjectId,
+    host_id: mongoose.Schema.Types.ObjectId,
+    playlist_id: mongoose.Schema.Types.ObjectId,
 });
 
 InvitedUserSchema.set("versionKey", false);
