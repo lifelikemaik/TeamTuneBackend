@@ -204,8 +204,7 @@ const registerInvite = async (req, res) => {
                 playlist_id: playlist._id,
                 host_id: playlist.owner,
             };
-            const invitedUser = await InvitedUser.create(user);
-            console.log("After creating user",invitedUser)
+            await InvitedUser.create(user);
 
         } catch (err) {
             if (err.code == 11000) {
