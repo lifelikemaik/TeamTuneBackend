@@ -98,7 +98,6 @@ const update = async (req, res) => {
             const user = await UserModel.findOne({
                 _id: req.userId,
             }).exec();
-            console.log('user: ', user);
             await changePlaylistDetails(user, playlist.spotify_id, {
                 public: req.body.publicity,
             });
@@ -272,12 +271,9 @@ const playlistContained = (id, playlists) => {
 
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId) => {
-    console.log('playlist.name: ', playlist.name);
-    console.log('playlist.owner.id: ', playlist.owner.id);
-    console.log('spotifyId: ', spotifyId);
     return {
         title: playlist.name || 'NO NAME',
-        publicity: false,
+        publicity: playlist.public,
         spotify_id: playlist.id,
         is_own_playlist: playlist.owner.id === spotifyId,
         description: playlist.description,
@@ -298,7 +294,7 @@ const packPlaylist = (playlist, spotifyId) => {
 const packPlaylistUpdate = (playlist, spotifyId) => {
     return {
         title: playlist.name || 'NO NAME',
-        publicity: false,
+        publicity: playlist.public,
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
