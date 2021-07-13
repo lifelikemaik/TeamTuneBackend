@@ -363,7 +363,6 @@ const get_playlist_time = async (req, res) => {
 
 const find_song_invited = async (req, res) => {
     try {
-        console.log("Es fängt an")
         const playlistId = req.params.id;
         const playlist = await PlaylistModel.findById(playlistId);
         const owner = await UserModel.findById(playlist.owner);
@@ -371,7 +370,6 @@ const find_song_invited = async (req, res) => {
 
         if (songName && owner) {
             const songs = await find_song_helper(owner, songName);
-            console.log("Es funktioniert");
             return res.status(200).json(songs);
         }
         return res.status(400);
@@ -385,7 +383,6 @@ const find_song_invited = async (req, res) => {
 }
 
 const find_song = async (req, res) => {
-    console.log("find song")
     try {
         const user = await UserModel.findById(req.userId);
         const songName = req.params.songname;
@@ -404,7 +401,6 @@ const find_song = async (req, res) => {
 }
 
 const find_song_helper = async (user, songName) => {
-    console.log("find song helper")
     try {
         const request = await searchTracksSpotify(user, songName);
         const songsFiltered = request.body.tracks.items.filter(
