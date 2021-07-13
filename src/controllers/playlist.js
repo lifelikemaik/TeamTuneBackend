@@ -298,14 +298,14 @@ const get_Recommendations = async (req, res) => {
          *
          * GANZ WICHTIG SPOTIFY ID IST NOTWENDIG
          */
-        const playlistID = '3sqMZDGlRyWC27qmRERstj';
+        const playlistID = '37i9dQZF1DX4jP4eebSWR9';
         const user = await UserModel.findById(req.userId);
         const requestAllTracks = await getAllTrackIDs(user, playlistID);
         const averagePlaylistInfos = await getPlaylistAverageInfos(user, playlistID);
         console.log(averagePlaylistInfos);
         const averagePopularity = await averagePlaylistInfos[0];
         if (requestAllTracks.length <= 6) {
-            let requestRecommendation = await getRecommendationsSpotify(user, requestAllTracks, 5, averagePopularity);
+            let requestRecommendation = await getRecommendationsSpotify(user, requestAllTracks, 5, averagePopularity, requestAllTracks);
             console.log('mit weniger gleich 6: ');
             return res.status(200).json(requestRecommendation);
         } else {
@@ -316,7 +316,7 @@ const get_Recommendations = async (req, res) => {
             }
             let trackRandoms = [];
             randomSelection.forEach(number => trackRandoms.push(requestAllTracks[number]));
-            let requestRecommendation = await getRecommendationsSpotify(user, trackRandoms, 5);
+            let requestRecommendation = await getRecommendationsSpotify(user, trackRandoms, 5, averagePopularity, requestAllTracks);
             console.log('mit random 6: ' );
             return res.status(200).json(requestRecommendation);
         }
@@ -343,14 +343,15 @@ const get_playlist_time = async (req, res) => {
         //retrieve playlistID ????? req.params.id not working
         console.log('get rekked: ' + req.params.id);
         const user = await UserModel.findById(req.userId);
-        const requestPlaylist = await getPlaylistSpotify(user, '3sqMZDGlRyWC27qmRERstj');
+        const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX2lUf1uE6Mre');
         let time = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
             time += requestPlaylist.tracks.items[i]['track'].duration_ms;
         }
         const timeInMin = (time / 60000);
         console.log("playtime in mins: " + timeInMin);
-        return res.status(200).json(timeInMin);
+        //frontend converts time in minutes
+        return res.status(200).json(time);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -362,7 +363,7 @@ const get_playlist_time = async (req, res) => {
 
 const find_song_invited = async (req, res) => {
     try {
-        console.log("Es fäng an")
+        console.log("Es fängt an")
         const playlistId = req.params.id;
         const playlist = await PlaylistModel.findById(playlistId);
         const owner = await UserModel.findById(playlist.owner);
@@ -370,9 +371,9 @@ const find_song_invited = async (req, res) => {
 
         if (songName && owner) {
             const songs = await find_song_helper(owner, songName);
+            console.log("Es funktioniert");
             return res.status(200).json(songs);
         }
-        console.log("Es funktioniert")
         return res.status(400);
     } catch (err) {
         console.log(err);
@@ -384,6 +385,7 @@ const find_song_invited = async (req, res) => {
 }
 
 const find_song = async (req, res) => {
+    console.log("find song")
     try {
         const user = await UserModel.findById(req.userId);
         const songName = req.params.songname;
@@ -402,6 +404,7 @@ const find_song = async (req, res) => {
 }
 
 const find_song_helper = async (user, songName) => {
+    console.log("find song helper")
     try {
         const request = await searchTracksSpotify(user, songName);
         const songsFiltered = request.body.tracks.items.filter(

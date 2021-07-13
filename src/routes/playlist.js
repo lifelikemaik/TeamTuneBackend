@@ -35,14 +35,15 @@ router.delete("/:id/:song_id", PlaylistMusicController.remove) // Removes the so
 
 router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.find_song)
 
-//router.get("/:id/:songname/invited", PlaylistController.find_song_invited)
+router.get("/songs/:songname/invited/:id", PlaylistController.find_song_invited)
 
-router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_Recommendations)
+//router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_Recommendations)
 
 router.get("/length/:id", middlewares.checkAuthentication, PlaylistController.get_playlist_time)
 //router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.getAllTrackIDs)
 
-
 router.put("/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song)
+
+//router.put("/invite/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song_invited)
 
 module.exports = router;
