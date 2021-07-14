@@ -6,7 +6,6 @@ const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
-const { getPlaylistSpotify } = require('../spotifyControllers');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { getUserNameFromId } = require('../spotifyControllers');
