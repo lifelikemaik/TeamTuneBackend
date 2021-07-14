@@ -15,22 +15,36 @@ router.get("/my_playlists", middlewares.checkAuthentication, PlaylistController.
 
 router.get("/:id", PlaylistController.read); // Read a playlist by Id
 
+//router.get("/:id", PlaylistController.readPublic); // Read a public playlist by Id
+
 router.post("/", middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
 
 // TODO: Add authentication
 router.put("/:id", middlewares.checkAuthentication, PlaylistController.update) // Edit playlist by Id (like title)
 
+router.get("/:id/follow", middlewares.checkAuthentication, PlaylistController.follow) // Follow playlist by Id (like title)
 
 router.delete("/:id", PlaylistController.remove) // Delete playlist by Id
 
 router.post("/:id", PlaylistMusicController.create) // Adds new Songs to the playlist by Id
 
+/***
+ * checkauthentication fehlt hier
+ */
 router.delete("/:id/:song_id", PlaylistMusicController.remove) // Removes the song by song_id from the playlist with id
 
 router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.find_song)
 
+router.get("/songs/:songname/invited/:id", PlaylistController.find_song_invited)
+
+//router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_Recommendations)
+
+router.get("/length/:id", middlewares.checkAuthentication, PlaylistController.get_playlist_time)
+//router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.getAllTrackIDs)
+
 router.put("/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song)
 
+//router.put("/invite/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song_invited)
 router.put("/copy/:id", middlewares.checkAuthentication, PlaylistController.copy)
 
 module.exports = router;

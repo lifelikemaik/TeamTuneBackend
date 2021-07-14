@@ -5,8 +5,11 @@ const PlaylistMusic = require('./playlistmusic')
 
 
 const PlaylistSchema = new mongoose.Schema({
-    publicity: Boolean,
+    //err:  MongooseError [CastError]: Cast to ObjectId failed for value "spotify" at path "owner"
+    owner: mongoose.Schema.Types.ObjectId,
+    public_id: String,
     spotify_id: String,
+    publicity: Boolean,
     title: {
         type: String,
         required: true
@@ -19,7 +22,6 @@ const PlaylistSchema = new mongoose.Schema({
     track_count: Number,
     description: String,
     image_url: String,
-    share_link: String,
     music_info: PlaylistMusic.schema,
     joined_people: [{
         type: mongoose.Schema.Types.ObjectId,

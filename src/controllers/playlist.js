@@ -1,4 +1,5 @@
 'use strict';
+const SHA256 = require('crypto-js/sha256');
 
 const express = require('express');
 const { getUserPlaylistsSpotify } = require('../spotifyControllers');
@@ -8,14 +9,20 @@ const https = require('https');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
+const { getRecommendationsSpotify } = require('../spotifyControllers');
+const { getPlaylistSpotify } = require('../spotifyControllers');
+const { getAllTrackIDs } = require('../spotifyControllers');
+const { followPlaylistSpotify } = require('../spotifyControllers');
+const { getPlaylistAverageInfos } = require('../spotifyControllers');
 const { changePlaylistDetails } = require('../spotifyControllers');
+
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
     if (Object.keys(req.body).length === 0)
         return res.status(400).json({
             error: 'Bad Request',
-            message: 'The request body is empty',
+            message: 'The request body is empty'
         });
 
     // handle the request
@@ -27,7 +34,7 @@ const create = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -77,7 +84,7 @@ const update = async (req, res) => {
     if (Object.keys(req.body).length === 0) {
         return res.status(400).json({
             error: 'Bad Request',
-            message: 'The request body is empty',
+            message: 'The request body is empty'
         });
     }
 
@@ -89,7 +96,7 @@ const update = async (req, res) => {
             req.body,
             {
                 new: true,
-                runValidators: true,
+                runValidators: true
             }
         ).exec();
 
@@ -109,7 +116,7 @@ const update = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -119,7 +126,7 @@ const updatePlaylistDatabase = async (packPlaylistUpdate) => {
         { spotify_id: packPlaylistUpdate.spotify_id },
         packPlaylistUpdate,
         {
-            new: true,
+            new: true
         }
     ).exec();
     return playlist;
@@ -127,14 +134,18 @@ const updatePlaylistDatabase = async (packPlaylistUpdate) => {
 
 const read = async (req, res) => {
     try {
+        let playlistId = req.params.id;
+        if((req.params.id).length != 24){
+            playlistId = await convertPublicToPrivateId(req.params.id);
+        }
         // get playlist with id from database
-        let playlist = await PlaylistModel.findById(req.params.id).exec();
+        let playlist = await PlaylistModel.findById(playlistId).exec();
 
         // if no playlist with id is found, return 404
         if (!playlist)
             return res.status(404).json({
                 error: 'Not Found',
-                message: `Playlist not found`,
+                message: `Playlist not found`
             });
 
         // return gotten playlist
@@ -143,7 +154,7 @@ const read = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -161,7 +172,7 @@ const remove = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -177,7 +188,7 @@ const list = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -185,7 +196,11 @@ const list = async (req, res) => {
 const list_public = async (req, res) => {
     try {
         // get all public playlists in database
-        let playlists = await PlaylistModel.find({ publicity: true }).exec();
+        let playlists = await PlaylistModel.find(
+            { publicity: true }
+        )
+            .select('-_id')
+            .exec();
 
         // return gotten playlists
         return res.status(200).json(playlists);
@@ -193,7 +208,7 @@ const list_public = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
         });
     }
 };
@@ -201,7 +216,7 @@ const list_public = async (req, res) => {
 const list_user_playlists = async (req, res) => {
     try {
         const user = await UserModel.findOne({
-            _id: req.userId,
+            _id: req.userId
         }).exec();
 
         // get user playlists from database
@@ -215,19 +230,9 @@ const list_user_playlists = async (req, res) => {
             const spotify_playlists = await getUserPlaylistsSpotify(user);
 
             for (let i in spotify_playlists) {
-                if (
-                    playlistContained(
-                        spotify_playlists[i].id,
-                        playlists.playlists
-                    )
-                ) {
+                if (playlistContained(spotify_playlists[i].id, playlists.playlists)) {
                     // Playlist already included in Database but might need updating
-                    await updatePlaylistDatabase(
-                        packPlaylistUpdate(
-                            spotify_playlists[i],
-                            user.spotify_id
-                        )
-                    );
+                    await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id, req.userId));
                 } else {
                     // Playlist is not included yet and has to be created in TeamTune
                     await createPlaylistDatabase(
@@ -254,10 +259,20 @@ const list_user_playlists = async (req, res) => {
     }
 };
 
+async function convertPublicToPrivateId(publicId){
+    let playlist = await PlaylistModel.findOne({
+        public_id: publicId
+    })
+        .exec();
+    return playlist._id;
+}
+
 // Check if playlist creator matches users spotify id
 const is_user_playlist = (ownerId, spotifyId) => {
     return ownerId === spotifyId;
 };
+
+
 
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
@@ -269,16 +284,21 @@ const playlistContained = (id, playlists) => {
     return false;
 };
 
+/*
+SHA256: The slowest, usually 60% slower than md5, and the longest generated hash (32 bytes).
+The probability of just two hashes accidentally colliding is approximately: 4.3*10-60.
+ */
 // creating a object with all relevant data to create a playlist
-const packPlaylist = (playlist, spotifyId) => {
+const packPlaylist = (playlist, spotifyId, userId) => {
     return {
+        owner: userId,
+        public_id: SHA256(playlist.id).toString(),
         title: playlist.name || 'NO NAME',
         publicity: playlist.public,
         spotify_id: playlist.id,
         is_own_playlist: playlist.owner.id === spotifyId,
         description: playlist.description,
         track_count: playlist.tracks.total,
-        share_link: '',
         image_url: playlist.images[0]?.url || null,
         joined_people: [],
         is_teamtune_playlist: false,
@@ -286,53 +306,110 @@ const packPlaylist = (playlist, spotifyId) => {
             durations_ms: 0,
             duration_target: 0,
             songs: [],
-            number_songs: 0,
         },
     };
 };
 
-const packPlaylistUpdate = (playlist, spotifyId) => {
+const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     return {
+        owner: userId,
+        public_id: SHA256(playlist.id).toString(),
         title: playlist.name || 'NO NAME',
-        publicity: playlist.public,
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
         image_url: playlist.images[0]?.url || null,
+        publicity: playlist.public,
     };
 };
 
-const find_song = async (req, res) => {
+
+
+const getEstimatedAmount = async (req, res) => {
+    // retrieve playlist target time and current time
+    // song 2 min, 120000 ms
+};
+
+const get_Recommendations = async (req, res) => {
     try {
+        // ACHTUNG! manchmal auch duplikate, bei aehnlichen Liedern, kann ein song kommen, der schon in der Playlist drin ist.
+        console.log('bruder musss los');
+        /***
+         *
+         * GANZ WICHTIG SPOTIFY ID IST NOTWENDIG
+         */
+        const playlistID = '37i9dQZF1DX4jP4eebSWR9';
         const user = await UserModel.findById(req.userId);
+        const requestAllTracks = await getAllTrackIDs(user, playlistID);
+        const averagePlaylistInfos = await getPlaylistAverageInfos(user, playlistID);
+        console.log(averagePlaylistInfos);
+        const averagePopularity = await averagePlaylistInfos[0];
+        if (requestAllTracks.length <= 6) {
+            let requestRecommendation = await getRecommendationsSpotify(user, requestAllTracks, 5, averagePopularity, requestAllTracks);
+            console.log('mit weniger gleich 6: ');
+            return res.status(200).json(requestRecommendation);
+        } else {
+            let randomSelection = [];
+            while (randomSelection.length < 5) {
+                let r = Math.floor(Math.random() * requestAllTracks.length);
+                if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
+            }
+            let trackRandoms = [];
+            randomSelection.forEach(number => trackRandoms.push(requestAllTracks[number]));
+            let requestRecommendation = await getRecommendationsSpotify(user, trackRandoms, 5, averagePopularity, requestAllTracks);
+            console.log('mit random 6: ' );
+            return res.status(200).json(requestRecommendation);
+        }
+    } catch (err) {
+        console.log('err: ', err);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: err.message
+        });
+    }
+
+};
+
+const get_Full_List_Recommendations = async (req, res) => {
+    // wie get_Recommendations nur in extremo
+    // get time left and time now --> multiple get Recomms, with estimator of songs
+    // --> average song time?
+    // Idee: Rekursiv
+}
+
+// if spotify id vorhanden
+const get_playlist_time = async (req, res) => {
+    try {
+        //retrieve playlistID ????? req.params.id not working
+        console.log('get rekked: ' + req.params.id);
+        const user = await UserModel.findById(req.userId);
+        const requestPlaylist = await getPlaylistSpotify(user, '37i9dQZF1DX2lUf1uE6Mre');
+        let time = 0;
+        for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
+            time += requestPlaylist.tracks.items[i]['track'].duration_ms;
+        }
+        const timeInMin = (time / 60000);
+        console.log("playtime in mins: " + timeInMin);
+        //frontend converts time in minutes
+        return res.status(200).json(time);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
+        });
+    }
+};
+
+const find_song_invited = async (req, res) => {
+    try {
+        const playlistId = req.params.id;
+        const playlist = await PlaylistModel.findById(playlistId);
+        const owner = await UserModel.findById(playlist.owner);
         const songName = req.params.songname;
-        if (songName && user) {
-            const request = await searchTracksSpotify(user, songName);
-            const songsFiltered = request.body.tracks.items.filter(
-                (result) => result.type === 'track'
-            );
-            const songIds = songsFiltered.map((song) => song.id);
-            const audioFeaturesResult = await getAudioFeaturesForTracks(
-                user,
-                songIds
-            );
-            const audioFeatures = audioFeaturesResult.body.audio_features;
-            const songs = songsFiltered.map((spotifySong) => {
-                return {
-                    spotify_id: spotifySong.id,
-                    name: spotifySong.name,
-                    duration_ms: spotifySong.duration_ms,
-                    artists: spotifySong.artists.map((artist) => {
-                        return {
-                            id: artist.id,
-                            name: artist.name,
-                        };
-                    }),
-                    audio_features: audioFeatures.find(
-                        (element) => element.id === spotifySong.id
-                    ),
-                };
-            });
+
+        if (songName && owner) {
+            const songs = await find_song_helper(owner, songName);
             return res.status(200).json(songs);
         }
         return res.status(400);
@@ -340,7 +417,63 @@ const find_song = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
+        });
+    }
+}
+
+const find_song = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+        const songName = req.params.songname;
+        if (songName && user) {
+            const songs = await find_song_helper(user, songName);
+            return res.status(200).json(songs);
+        }
+        return res.status(400);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
+        });
+    }
+}
+
+const find_song_helper = async (user, songName) => {
+    try {
+        const request = await searchTracksSpotify(user, songName);
+        const songsFiltered = request.body.tracks.items.filter(
+            (result) => result.type === 'track'
+        );
+        const songIds = songsFiltered.map((song) => song.id);
+        const audioFeaturesResult = await getAudioFeaturesForTracks(
+            user,
+            songIds
+        );
+        const audioFeatures = audioFeaturesResult.body.audio_features;
+        const songs = songsFiltered.map((spotifySong) => {
+            return {
+                spotify_id: spotifySong.id,
+                name: spotifySong.name,
+                duration_ms: spotifySong.duration_ms,
+                artists: spotifySong.artists.map((artist) => {
+                    return {
+                        id: artist.id,
+                        name: artist.name
+                    };
+                }),
+                audio_features: audioFeatures.find(
+                    (element) => element.id === spotifySong.id
+                )
+            };
+        })
+        return songs;
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
         });
     }
 };
@@ -358,7 +491,28 @@ const add_song = async (req, res) => {
         console.log(err);
         return res.status(500).json({
             error: 'Internal server error',
-            message: err.message,
+            message: err.message
+        });
+    }
+};
+
+const follow = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+        const playlistId = await convertPublicToPrivateId(req.params.id);
+        const playlist = await PlaylistModel.findOne({
+            _id: playlistId
+        }).exec();
+        const result = await followPlaylistSpotify(
+            user,
+            playlist.spotify_id,
+        );
+        return res.status(200).json(result.body);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message
         });
     }
 };
@@ -373,5 +527,10 @@ module.exports = {
     list_public,
     list_user_playlists,
     find_song,
+    find_song_invited,
     add_song,
+    get_Recommendations,
+    get_playlist_time,
+    getAllTrackIDs,
+    follow,
 };

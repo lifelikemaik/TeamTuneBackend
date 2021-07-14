@@ -7,7 +7,9 @@ const InvitedUserSchema = new mongoose.Schema({
     username: {
         type: String,
         required: true,
-    }
+    },
+    host_id: mongoose.Schema.Types.ObjectId,
+    playlist_id: mongoose.Schema.Types.ObjectId,
 });
 
 InvitedUserSchema.set("versionKey", false);

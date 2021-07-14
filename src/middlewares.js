@@ -1,10 +1,10 @@
 "use strict";
 
 const jwt = require("jsonwebtoken");
-
 const config = require("./config");
-
 const UserModel = require("./models/user");
+
+
 
 const allowCrossDomain = (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -45,6 +45,7 @@ const checkAuthentication = (req, res, next) => {
         next();
     });
 };
+
 
 const checkIsAdmin = async (req, res, next) => {
     // checkAuthentication must be executed before this method
