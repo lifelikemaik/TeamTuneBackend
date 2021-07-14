@@ -6,8 +6,10 @@ const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
+const { getPlaylistSpotify } = require('../spotifyControllers');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
+const { getUserNameFromId } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
 const { getRecommendationsSpotify } = require('../spotifyControllers');
 const { getPlaylistSpotify } = require('../spotifyControllers');
@@ -27,7 +29,7 @@ const create = async (req, res) => {
 
     // handle the request
     try {
-        const playlist = addPlaylist(req.body, req.userId);
+        const playlist = await addPlaylist(req.body, req.userId);
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {
@@ -139,14 +141,46 @@ const read = async (req, res) => {
             playlistId = await convertPublicToPrivateId(req.params.id);
         }
         // get playlist with id from database
-        let playlist = await PlaylistModel.findById(playlistId).exec();
-
+        let playlist = await PlaylistModel.findById(req.params.id)
+            .lean()
+            .exec();
         // if no playlist with id is found, return 404
         if (!playlist)
             return res.status(404).json({
                 error: 'Not Found',
                 message: `Playlist not found`
             });
+        // If spotify playlist is linked, fetch all the songs and add them to the object being returned
+        if (playlist.spotify_id) {
+            const user = await UserModel.findOne({
+                _id: req.userId,
+            }).exec();
+            const playlistSpotify = await getPlaylistSpotify(
+                user,
+                playlist.spotify_id
+            );
+            const songs = playlistSpotify.tracks.items.map((song) => {
+              return {
+                  interpret: song.track.artists.map((artist) => artist.name).join(', '),
+                  album: song.track.album.name,
+                  title: song.track.name,
+                  added_by: song.added_by.id,
+                  duration_ms: song.track.duration_ms,
+              }
+            });
+            
+            //Map user ids to names
+            const ids = [...new Set(songs.map((song) => song.added_by))];
+            const dictionary = {};
+            for (const id of ids) {
+                const userName = await getUserNameFromId(user, id);
+                dictionary[id] = userName;
+            }
+            songs.forEach((song) => {
+                song.added_by = dictionary[song.added_by];
+            })
+            playlist.music_info.songs = songs;
+        }
 
         // return gotten playlist
         return res.status(200).json(playlist);
@@ -196,6 +230,7 @@ const list = async (req, res) => {
 const list_public = async (req, res) => {
     try {
         // get all public playlists in database
+
         let playlists = await PlaylistModel.find(
             { publicity: true }
         )
@@ -273,7 +308,6 @@ const is_user_playlist = (ownerId, spotifyId) => {
 };
 
 
-
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
     for (let j in playlists) {
@@ -310,6 +344,7 @@ const packPlaylist = (playlist, spotifyId, userId) => {
     };
 };
 
+
 const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     return {
         owner: userId,
@@ -322,6 +357,7 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
         publicity: playlist.public,
     };
 };
+
 
 
 
@@ -367,7 +403,6 @@ const get_Recommendations = async (req, res) => {
             message: err.message
         });
     }
-
 };
 
 const get_Full_List_Recommendations = async (req, res) => {
