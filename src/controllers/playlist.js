@@ -1,13 +1,14 @@
 'use strict';
 
-const express = require("express");
-const {getUserPlaylistsSpotify} = require("../spotifyControllers");
+const express = require('express');
+const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
+const { changePlaylistDetails } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -19,14 +20,7 @@ const create = async (req, res) => {
 
     // handle the request
     try {
-        // create playlist in database
-        let playlist = await createPlaylistDatabase(req.body, req.userId)
-
-        // add playlist id to users playlists
-        let user_playlists = await UserModel.update(
-            { _id: req.userId },
-            { $addToSet: { playlists: playlist._id } }
-        ).exec();
+        const playlist = addPlaylist(req.body, req.userId);
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {
@@ -38,17 +32,45 @@ const create = async (req, res) => {
     }
 };
 
+const addPlaylist = async (playlist, userId) => {
+    // create playlist in database
+    const createdPlaylist = await createPlaylistDatabase(playlist, userId);
+
+    // add playlist id to users playlists
+    let user_playlists = await UserModel.update(
+        { _id: userId },
+        { $addToSet: { playlists: createdPlaylist._id } }
+    ).exec();
+    return createdPlaylist;
+};
+
+const copy = async (req, res) => {
+    const playlistId = req.params.id;
+    const userId = req.userId;
+    try {
+        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        delete playlist._id;
+        const newPlaylist = await addPlaylist(playlist, userId);
+        return res.status(201).json(newPlaylist);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+};
+
 const createPlaylistDatabase = async (body, userId) => {
-    console.log(body, userId)
     // create playlist in database
     let playlist = await PlaylistModel.create(body);
     // add playlist id to users playlists
     await UserModel.update(
-        {_id: userId},
-        {$addToSet: {playlists: playlist._id}}
+        { _id: userId },
+        { $addToSet: { playlists: playlist._id } }
     ).exec();
     return playlist;
-}
+};
 
 const update = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -71,6 +93,16 @@ const update = async (req, res) => {
             }
         ).exec();
 
+        // If publicity was changed, update connected spotify playlist accordingly
+        if ('publicity' in req.body && playlist.spotify_id) {
+            const user = await UserModel.findOne({
+                _id: req.userId,
+            }).exec();
+            await changePlaylistDetails(user, playlist.spotify_id, {
+                public: req.body.publicity,
+            });
+        }
+
         // return updated playlist
         return res.status(200).json(playlist);
     } catch (err) {
@@ -84,14 +116,14 @@ const update = async (req, res) => {
 
 const updatePlaylistDatabase = async (packPlaylistUpdate) => {
     let playlist = await PlaylistModel.findOneAndUpdate(
-        {spotify_id: packPlaylistUpdate.spotify_id},
+        { spotify_id: packPlaylistUpdate.spotify_id },
         packPlaylistUpdate,
         {
             new: true,
         }
     ).exec();
     return playlist;
-}
+};
 
 const read = async (req, res) => {
     try {
@@ -153,10 +185,9 @@ const list = async (req, res) => {
 const list_public = async (req, res) => {
     try {
         // get all public playlists in database
-        let playlists = await PlaylistModel.find({publicity: true}).exec();
+        let playlists = await PlaylistModel.find({ publicity: true }).exec();
 
         // return gotten playlists
-        console.log(playlists);
         return res.status(200).json(playlists);
     } catch (err) {
         console.log(err);
@@ -176,46 +207,57 @@ const list_user_playlists = async (req, res) => {
         // get user playlists from database
         let playlists = await UserModel.findById(req.userId)
             .lean()
-            .populate("playlists")
-            .select("playlists")
+            .populate('playlists')
+            .select('playlists')
             .exec();
 
         if (user) {
             const spotify_playlists = await getUserPlaylistsSpotify(user);
 
             for (let i in spotify_playlists) {
-                if(playlistContained(spotify_playlists[i].id, playlists.playlists)){
+                if (
+                    playlistContained(
+                        spotify_playlists[i].id,
+                        playlists.playlists
+                    )
+                ) {
                     // Playlist already included in Database but might need updating
-                    await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id));
+                    await updatePlaylistDatabase(
+                        packPlaylistUpdate(
+                            spotify_playlists[i],
+                            user.spotify_id
+                        )
+                    );
                 } else {
                     // Playlist is not included yet and has to be created in TeamTune
-                    await createPlaylistDatabase(packPlaylist(spotify_playlists[i], user.spotify_id), req.userId);
+                    await createPlaylistDatabase(
+                        packPlaylist(spotify_playlists[i], user.spotify_id),
+                        req.userId
+                    );
                 }
             }
         }
         // get user playlists from database
         playlists = await UserModel.findById(req.userId)
             .lean()
-            .populate("playlists")
-            .select("playlists")
+            .populate('playlists')
+            .select('playlists')
             .exec();
 
         return res.status(200).json(playlists.playlists);
     } catch (err) {
         console.log('err: ', err);
         return res.status(500).json({
-            error: "Internal Server Error",
+            error: 'Internal Server Error',
             message: err.message,
         });
     }
 };
 
-
-
 // Check if playlist creator matches users spotify id
 const is_user_playlist = (ownerId, spotifyId) => {
-    return (ownerId === spotifyId);
-}
+    return ownerId === spotifyId;
+};
 
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
@@ -225,18 +267,18 @@ const playlistContained = (id, playlists) => {
         }
     }
     return false;
-}
+};
 
 // creating a object with all relevant data to create a playlist
 const packPlaylist = (playlist, spotifyId) => {
     return {
-        title: playlist.name || "NO NAME",
-        publicity: false,
+        title: playlist.name || 'NO NAME',
+        publicity: playlist.public,
         spotify_id: playlist.id,
-        is_own_playlist: (playlist.owner.id === spotifyId),
+        is_own_playlist: playlist.owner.id === spotifyId,
         description: playlist.description,
         track_count: playlist.tracks.total,
-        share_link: "",
+        share_link: '',
         image_url: playlist.images[0]?.url || null,
         joined_people: [],
         is_teamtune_playlist: false,
@@ -246,18 +288,18 @@ const packPlaylist = (playlist, spotifyId) => {
             songs: [],
             number_songs: 0,
         },
-    }
+    };
 };
 
 const packPlaylistUpdate = (playlist, spotifyId) => {
     return {
-        title: playlist.name || "NO NAME",
-        publicity: false,
+        title: playlist.name || 'NO NAME',
+        publicity: playlist.public,
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
         image_url: playlist.images[0]?.url || null,
-    }
+    };
 };
 
 const find_song = async (req, res) => {
@@ -291,7 +333,6 @@ const find_song = async (req, res) => {
                     ),
                 };
             });
-            //console.log('songs: ', songs);
             return res.status(200).json(songs);
         }
         return res.status(400);
@@ -324,6 +365,7 @@ const add_song = async (req, res) => {
 
 module.exports = {
     create,
+    copy,
     update,
     read,
     remove,

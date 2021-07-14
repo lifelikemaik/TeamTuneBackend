@@ -181,6 +181,21 @@ module.exports = {
             console.log(err);
         }
     },
+    changePlaylistDetails: async function (user, playlistId, details) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        try {
+            const result = await spotifyApi.changePlaylistDetails(playlistId, details);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+
 };
 
 /**
