@@ -7,7 +7,6 @@ const helmet     = require('helmet');
 const middlewares = require('./middlewares');
 
 const auth  = require('./routes/auth');
-const movie = require('./routes/movie');
 const playlist = require('./routes/playlist');
 const callback = require('./routes/callback');
 
@@ -30,7 +29,6 @@ api.get('/', (req, res) => {
 
 // API routes
 api.use('/auth'  , auth);
-api.use('/movies', movie);
 api.use('/playlists', playlist);
 api.use('/callback', callback);
 

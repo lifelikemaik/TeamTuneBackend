@@ -1,5 +1,6 @@
 'use strict';
 const SHA256 = require('crypto-js/sha256');
+
 const express = require('express');
 const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
@@ -13,6 +14,7 @@ const { getPlaylistSpotify } = require('../spotifyControllers');
 const { getAllTrackIDs } = require('../spotifyControllers');
 const { followPlaylistSpotify } = require('../spotifyControllers');
 const { getPlaylistAverageInfos } = require('../spotifyControllers');
+const { changePlaylistDetails } = require('../spotifyControllers');
 
 
 const create = async (req, res) => {
@@ -25,14 +27,7 @@ const create = async (req, res) => {
 
     // handle the request
     try {
-        // create playlist in database
-        let playlist = await createPlaylistDatabase(req.body, req.userId);
-
-        // add playlist id to users playlists
-        await UserModel.update(
-            { _id: req.userId },
-            { $addToSet: { playlists: playlist._id } }
-        ).exec();
+        const playlist = addPlaylist(req.body, req.userId);
         // return created playlist
         return res.status(201).json(playlist);
     } catch (err) {
@@ -44,8 +39,36 @@ const create = async (req, res) => {
     }
 };
 
+const addPlaylist = async (playlist, userId) => {
+    // create playlist in database
+    const createdPlaylist = await createPlaylistDatabase(playlist, userId);
+
+    // add playlist id to users playlists
+    let user_playlists = await UserModel.update(
+        { _id: userId },
+        { $addToSet: { playlists: createdPlaylist._id } }
+    ).exec();
+    return createdPlaylist;
+};
+
+const copy = async (req, res) => {
+    const playlistId = req.params.id;
+    const userId = req.userId;
+    try {
+        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        delete playlist._id;
+        const newPlaylist = await addPlaylist(playlist, userId);
+        return res.status(201).json(newPlaylist);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+};
+
 const createPlaylistDatabase = async (body, userId) => {
-    console.log(body, userId);
     // create playlist in database
     let playlist = await PlaylistModel.create(body);
     // add playlist id to users playlists
@@ -76,6 +99,16 @@ const update = async (req, res) => {
                 runValidators: true
             }
         ).exec();
+
+        // If publicity was changed, update connected spotify playlist accordingly
+        if ('publicity' in req.body && playlist.spotify_id) {
+            const user = await UserModel.findOne({
+                _id: req.userId,
+            }).exec();
+            await changePlaylistDetails(user, playlist.spotify_id, {
+                public: req.body.publicity,
+            });
+        }
 
         // return updated playlist
         return res.status(200).json(playlist);
@@ -170,7 +203,6 @@ const list_public = async (req, res) => {
             .exec();
 
         // return gotten playlists
-        console.log(playlists);
         return res.status(200).json(playlists);
     } catch (err) {
         console.log(err);
@@ -203,7 +235,10 @@ const list_user_playlists = async (req, res) => {
                     await updatePlaylistDatabase(packPlaylistUpdate(spotify_playlists[i], user.spotify_id, req.userId));
                 } else {
                     // Playlist is not included yet and has to be created in TeamTune
-                    await createPlaylistDatabase(packPlaylist(spotify_playlists[i], user.spotify_id), req.userId);
+                    await createPlaylistDatabase(
+                        packPlaylist(spotify_playlists[i], user.spotify_id),
+                        req.userId
+                    );
                 }
             }
         }
@@ -219,7 +254,7 @@ const list_user_playlists = async (req, res) => {
         console.log('err: ', err);
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: err.message
+            message: err.message,
         });
     }
 };
@@ -232,6 +267,12 @@ async function convertPublicToPrivateId(publicId){
     return playlist._id;
 }
 
+// Check if playlist creator matches users spotify id
+const is_user_playlist = (ownerId, spotifyId) => {
+    return ownerId === spotifyId;
+};
+
+
 
 // Check if Spotify Id matches with the spotify id of one of the existing playlists
 const playlistContained = (id, playlists) => {
@@ -243,7 +284,6 @@ const playlistContained = (id, playlists) => {
     return false;
 };
 
-
 /*
 SHA256: The slowest, usually 60% slower than md5, and the longest generated hash (32 bytes).
 The probability of just two hashes accidentally colliding is approximately: 4.3*10-60.
@@ -254,9 +294,9 @@ const packPlaylist = (playlist, spotifyId, userId) => {
         owner: userId,
         public_id: SHA256(playlist.id).toString(),
         title: playlist.name || 'NO NAME',
-        publicity: false,
+        publicity: playlist.public,
         spotify_id: playlist.id,
-        is_own_playlist: (playlist.owner.id === spotifyId),
+        is_own_playlist: playlist.owner.id === spotifyId,
         description: playlist.description,
         track_count: playlist.tracks.total,
         image_url: playlist.images[0]?.url || null,
@@ -266,8 +306,7 @@ const packPlaylist = (playlist, spotifyId, userId) => {
             durations_ms: 0,
             duration_target: 0,
             songs: [],
-            number_songs: 0
-        }
+        },
     };
 };
 
@@ -279,7 +318,8 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
         spotify_id: playlist.id,
         description: playlist.description,
         track_count: playlist.tracks.total,
-        image_url: playlist.images[0]?.url || null
+        image_url: playlist.images[0]?.url || null,
+        publicity: playlist.public,
     };
 };
 
@@ -479,6 +519,7 @@ const follow = async (req, res) => {
 
 module.exports = {
     create,
+    copy,
     update,
     read,
     remove,

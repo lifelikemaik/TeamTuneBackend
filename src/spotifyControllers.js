@@ -16,13 +16,13 @@ function authenticateAPI(user) {
     if (tokenRefreshEarly >= user.token_refreshdate) {
         const tokenExpired = new Date(now.getTime() + 60 * 60000);
         spotifyApi.refreshAccessToken().then(
-            function(data) {
+            function (data) {
                 spotifyApi.setAccessToken(data.body['access_token']);
                 user.set('access_token', data.body['access_token']);
                 user.set('token_refreshdate', tokenExpired);
                 user.save();
             },
-            function(err) {
+            function (err) {
                 console.log('Could not refresh access token', err);
             }
         );
@@ -40,7 +40,7 @@ module.exports = {
      * @param playlistId
      * @returns {Promise<null|*>} Promise of playlist object
      */
-    getPlaylistSpotify: async function(user, playlistId) {
+    getPlaylistSpotify: async function (user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -86,7 +86,7 @@ module.exports = {
      * @param user the user object which needs to have an access_token and refresh_token
      * @returns {Promise<unknown>} Promise containing a list of all playlists
      */
-    getUserPlaylistsSpotify: async function(user) {
+    getUserPlaylistsSpotify: async function (user) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -113,7 +113,7 @@ module.exports = {
      * @param playlistId id of playlist to follow
      * @returns {Promise<*|null>} http response of spotify api
      */
-    followPlaylistSpotify: async function(user, playlistId) {
+    followPlaylistSpotify: async function (user, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -135,7 +135,7 @@ module.exports = {
      * @param trackName name of track, album or artist
      * @returns result http response of spotify api
      */
-    searchTracksSpotify: async function(user, trackName) {
+    searchTracksSpotify: async function (user, trackName) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -149,7 +149,7 @@ module.exports = {
             console.log(err);
         }
     },
-    getAudioFeaturesForTracks: async function(user, trackIds) {
+    getAudioFeaturesForTracks: async function (user, trackIds) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -163,7 +163,7 @@ module.exports = {
             console.log(err);
         }
     },
-    addSongToPlaylist: async function(user, songId, playlistId) {
+    addSongToPlaylist: async function (user, songId, playlistId) {
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -181,9 +181,10 @@ module.exports = {
             console.log(err);
         }
     },
-    getAllTrackIDs: async function(user, playlistID) {
+    getAllTrackIDs: async function (user, playlistID) {
         //retrieve playlistID ????? req.params.id not working
         // console.log("get rekked: "+ req.params.id);
+
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
@@ -198,7 +199,7 @@ module.exports = {
         const tracksArray = Array.from(trackSet);
         return JSON.parse(JSON.stringify(tracksArray));
     },
-    getRecommendationsSpotify: async function(user, tracks, limit, popularity, allTracks) {
+    getRecommendationsSpotify: async function (user, tracks, limit, popularity, allTracks) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
@@ -211,7 +212,7 @@ module.exports = {
             target_popularity: popularity,
             market: 'DE' // only songs available in Germany
         })
-            .then(function(data) {
+            .then(function (data) {
                 let recommendations = data.body;
                 let resultIDs = [];
                 for (let i = 0; i < recommendations.tracks.length; i++) {
@@ -231,11 +232,11 @@ module.exports = {
                 //console.log(recommendations);
                 console.log(resultIDs);
                 return resultIDs;
-            }, function(err) {
+            }, function (err) {
                 console.log('Something went wrong!', err);
             });
     },
-    getAveragePopularity: async function(user, playlistID) {
+    getAveragePopularity: async function (user, playlistID) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
@@ -249,7 +250,7 @@ module.exports = {
         }
         return Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
     },
-    getPlaylistAverageInfos: async function(user, playlistID) {
+    getPlaylistAverageInfos: async function (user, playlistID) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
@@ -273,7 +274,22 @@ module.exports = {
         results.push(averageTrackDuration);
         results.push(sumDuration);
         return results;
-    }
+    },
+    changePlaylistDetails: async function (user, playlistId, details) {
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        // Make sure spotify authentication works
+        try {
+            const result = await spotifyApi.changePlaylistDetails(playlistId, details);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+
 };
 
 /**

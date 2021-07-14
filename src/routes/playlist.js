@@ -20,7 +20,7 @@ router.get("/:id", PlaylistController.read); // Read a playlist by Id
 router.post("/", middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
 
 // TODO: Add authentication
-router.put("/:id", PlaylistController.update) // Edit playlist by Id (like title)
+router.put("/:id", middlewares.checkAuthentication, PlaylistController.update) // Edit playlist by Id (like title)
 
 router.get("/:id/follow", middlewares.checkAuthentication, PlaylistController.follow) // Follow playlist by Id (like title)
 
@@ -45,5 +45,6 @@ router.get("/length/:id", middlewares.checkAuthentication, PlaylistController.ge
 router.put("/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song)
 
 //router.put("/invite/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song_invited)
+router.put("/copy/:id", middlewares.checkAuthentication, PlaylistController.copy)
 
 module.exports = router;
