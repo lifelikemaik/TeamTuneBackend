@@ -15,6 +15,8 @@ router.get("/my_playlists", middlewares.checkAuthentication, PlaylistController.
 
 router.get("/:id", middlewares.checkAuthentication, PlaylistController.read); // Read a playlist by Id
 
+router.get("/invited/:id", PlaylistController.read_invited); // Read a playlist by Id
+
 //router.get("/:id", PlaylistController.readPublic); // Read a public playlist by Id
 
 router.post("/", middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
