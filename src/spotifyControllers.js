@@ -65,21 +65,6 @@ module.exports = {
         } catch (err) {
             console.log(err);
         }
-
-        /* Alternative way with then and Promise:
-        return new Promise(function (resolve, reject) {
-            spotifyApi.getPlaylist(playlistId, {limit: 100})
-                .then(async function (data) {
-                    const tracks = await spotifyApi.getPlaylistTracks(playlistId);
-                    const allTracks = await getAllTracks(spotifyApi, playlistId, 0, [], tracks.body);
-                    data.body.tracks.items = allTracks;
-                    resolve(data.body);
-                }, function(err) {
-                    console.log('Something went wrong!', err);
-                    reject(err);
-                });
-        })
-         */
     },
     /**
      * returns all Playlists of a user
@@ -106,7 +91,26 @@ module.exports = {
             console.log(err);
         }
     },
-
+    /**
+     * fetches the username of a spotify user
+     * @param user current user
+     * @param spotifyId spotifyId of the user the name should be fetched from
+     * @returns {Promise<string>} username
+     */
+    getUserNameFromId: async function (user, spotifyId) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        try {
+            const user = await spotifyApi.getUser(spotifyId);
+            return user.body.display_name;
+        } catch (err) {
+            console.log(err);
+        }
+    },
     /**
      * Follows a playlist on spotify
      * @param user current user
