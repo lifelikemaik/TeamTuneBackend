@@ -304,7 +304,7 @@ const list_public = async (req, res) => {
     try {
         // get all public playlists in database
 
-        let playlists = await PlaylistModel.find({ publicity: true })
+        let playlists = await PlaylistModel.find({ publicity: true, is_teamtune_playlist: true })
             .select('-_id')
             .exec();
 
