@@ -2,6 +2,8 @@
 const SpotifyWebApi = require('spotify-web-api-node');
 const config = require('./config');
 
+// NPM LINK: https://www.npmjs.com/package/spotify-web-api-node
+
 function authenticateAPI(user) {
     const spotifyApi = new SpotifyWebApi();
     spotifyApi.setCredentials({
@@ -289,6 +291,20 @@ module.exports = {
         try {
             const result = await spotifyApi.changePlaylistDetails(playlistId, details);
             return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+    createPlaylist: async function (user, playlistTitle) {
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        // Make sure spotify authentication works
+        try {
+            const result = await spotifyApi.createPlaylist(playlistTitle)
+            return result.body;
         } catch (err) {
             console.log(err);
         }

@@ -6,6 +6,7 @@ const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
 const https = require('https');
+const { createPlaylist } = require('../spotifyControllers');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { getUserNameFromId } = require('../spotifyControllers');
@@ -39,15 +40,34 @@ const create = async (req, res) => {
     }
 };
 
+/**
+ * Backend logic when adding playlist (Adding it to user model, create and link public_id and Spotify Playlist/spotify_id)
+ * @param playlist playlist object from request
+ * @param userId current user id
+ * @returns {Promise<*>} Promise with finished playlist
+ */
 const addPlaylist = async (playlist, userId) => {
     // create playlist in database
-    const createdPlaylist = await createPlaylistDatabase(playlist, userId);
+    let createdPlaylist = await createPlaylistDatabase(playlist, userId);
 
     // add playlist id to users playlists
     let user_playlists = await UserModel.update(
         { _id: userId },
         { $addToSet: { playlists: createdPlaylist._id } }
     ).exec();
+
+    // Add public_id to newly created playlist, also add owner
+    const public_id = SHA256(createdPlaylist._id).toString();
+    createdPlaylist = await updatePlaylistDatabase(createdPlaylist._id, { public_id: public_id, owner: userId});
+
+    // Create playlist on spotify and link it on model
+    const user = await UserModel.findOne({
+        _id: userId,
+    }).exec();
+    const spotifyPlaylist = await createPlaylist(user, createdPlaylist.title);
+    const spotifyId = spotifyPlaylist.id;
+    createdPlaylist = await updatePlaylistDatabase(createdPlaylist._id, { spotify_id: spotifyId });
+
     return createdPlaylist;
 };
 
@@ -121,9 +141,20 @@ const update = async (req, res) => {
     }
 };
 
-const updatePlaylistDatabase = async (packPlaylistUpdate) => {
+const updatePlaylistDatabaseWithSpotifyId = async (packPlaylistUpdate) => {
     let playlist = await PlaylistModel.findOneAndUpdate(
         { spotify_id: packPlaylistUpdate.spotify_id },
+        packPlaylistUpdate,
+        {
+            new: true,
+        }
+    ).exec();
+    return playlist;
+};
+
+const updatePlaylistDatabase = async (id, packPlaylistUpdate) => {
+    let playlist = await PlaylistModel.findByIdAndUpdate(
+        id,
         packPlaylistUpdate,
         {
             new: true,
@@ -139,9 +170,7 @@ const read = async (req, res) => {
             playlistId = await convertPublicToPrivateId(req.params.id);
         }
         // get playlist with id from database
-        let playlist = await PlaylistModel.findById(playlistId)
-            .lean()
-            .exec();
+        let playlist = await PlaylistModel.findById(playlistId).lean().exec();
         // if no playlist with id is found, return 404
         if (!playlist)
             return res.status(404).json({
@@ -179,9 +208,7 @@ const read_invited = async (req, res) => {
             playlistId = await convertPublicToPrivateId(req.params.id);
         }
         // get playlist with id from database
-        let playlist = await PlaylistModel.findById(playlistId)
-            .lean()
-            .exec();
+        let playlist = await PlaylistModel.findById(playlistId).lean().exec();
         // if no playlist with id is found, return 404
         if (!playlist)
             return res.status(404).json({
@@ -316,7 +343,7 @@ const list_user_playlists = async (req, res) => {
                     )
                 ) {
                     // Playlist already included in Database but might need updating
-                    await updatePlaylistDatabase(
+                    await updatePlaylistDatabaseWithSpotifyId(
                         packPlaylistUpdate(
                             spotify_playlists[i],
                             user.spotify_id,
