@@ -1,7 +1,6 @@
 'use strict';
 const SHA256 = require('crypto-js/sha256');
 
-const express = require('express');
 const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
@@ -606,15 +605,11 @@ const find_song_helper = async (user, songName) => {
 
 const add_song_invited = async (req, res) => {
     try {
-        const playlist = await PlaylistModel.findById(playlistId);
+        const playlistId = req.params.id;
+        const playlist = await PlaylistModel.findOne({spotify_id:playlistId});
         const owner = await UserModel.findById(playlist.owner);
-        const songName = req.params.songname;
-
-        if (songName && owner) {
-            const songs = await addSongToPlaylist(owner, req.params.song_id, req.params.id);
-            return res.status(200).json(songs);
-        }
-        return res.status(400);
+        const songs = await addSongToPlaylist(owner, req.params.song_id, playlistId);
+        return res.status(200).json(songs);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
