@@ -46,7 +46,7 @@ router.get("/length/:id", middlewares.checkAuthentication, PlaylistController.ge
 
 router.put("/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song)
 
-//router.put("/invite/:id/songs/:song_id", middlewares.checkAuthentication, PlaylistController.add_song_invited)
+router.put("/invite/:id/songs/:song_id", PlaylistController.add_song_invited)
 router.put("/copy/:id", middlewares.checkAuthentication, PlaylistController.copy)
 
 module.exports = router;

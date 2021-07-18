@@ -1,7 +1,6 @@
 'use strict';
 const SHA256 = require('crypto-js/sha256');
 
-const express = require('express');
 const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
@@ -437,10 +436,6 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     };
 };
 
-const getEstimatedAmount = async (req, res) => {
-    // retrieve playlist target time and current time
-    // song 2 min, 120000 ms
-};
 
 const get_Recommendations = async (req, res) => {
     try {
@@ -608,6 +603,22 @@ const find_song_helper = async (user, songName) => {
     }
 };
 
+const add_song_invited = async (req, res) => {
+    try {
+        const playlistId = req.params.id;
+        const playlist = await PlaylistModel.findOne({spotify_id:playlistId});
+        const owner = await UserModel.findById(playlist.owner);
+        const songs = await addSongToPlaylist(owner, req.params.song_id, playlistId);
+        return res.status(200).json(songs.body);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+};
+
 const add_song = async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId);
@@ -657,6 +668,7 @@ module.exports = {
     find_song,
     find_song_invited,
     add_song,
+    add_song_invited,
     get_Recommendations,
     get_playlist_time,
     getAllTrackIDs,
