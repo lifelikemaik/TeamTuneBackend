@@ -437,10 +437,6 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     };
 };
 
-const getEstimatedAmount = async (req, res) => {
-    // retrieve playlist target time and current time
-    // song 2 min, 120000 ms
-};
 
 const get_Recommendations = async (req, res) => {
     try {
@@ -608,6 +604,26 @@ const find_song_helper = async (user, songName) => {
     }
 };
 
+const add_song_invited = async (req, res) => {
+    try {
+        const playlist = await PlaylistModel.findById(playlistId);
+        const owner = await UserModel.findById(playlist.owner);
+        const songName = req.params.songname;
+
+        if (songName && owner) {
+            const songs = await addSongToPlaylist(owner, req.params.song_id, req.params.id);
+            return res.status(200).json(songs);
+        }
+        return res.status(400);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+};
+
 const add_song = async (req, res) => {
     try {
         const user = await UserModel.findById(req.userId);
@@ -657,6 +673,7 @@ module.exports = {
     find_song,
     find_song_invited,
     add_song,
+    add_song_invited,
     get_Recommendations,
     get_playlist_time,
     getAllTrackIDs,
