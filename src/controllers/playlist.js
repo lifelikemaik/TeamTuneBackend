@@ -609,7 +609,7 @@ const add_song_invited = async (req, res) => {
         const playlist = await PlaylistModel.findOne({spotify_id:playlistId});
         const owner = await UserModel.findById(playlist.owner);
         const songs = await addSongToPlaylist(owner, req.params.song_id, playlistId);
-        return res.status(200).json(songs);
+        return res.status(200).json(songs.body);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
