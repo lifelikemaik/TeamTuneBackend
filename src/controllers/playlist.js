@@ -242,6 +242,7 @@ const read_invited = async (req, res) => {
 const read_helper = async (user, playlistSpotify) => {
     const songs = playlistSpotify.tracks.items.map((song) => {
         return {
+            id: song.track.id,
             interpret: song.track.artists
                 .map((artist) => artist.name)
                 .join(', '),
