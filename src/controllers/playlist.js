@@ -71,7 +71,10 @@ const addPlaylist = async (playlist, userId) => {
 };
 
 const copy = async (req, res) => {
-    const playlistId = req.params.id;
+    let playlistId = req.params.id;
+    if (req.params.id.length !== 24) {
+        playlistId = await convertPublicToPrivateId(req.params.id);
+    }
     const userId = req.userId;
     try {
         const playlist = await PlaylistModel.findById(playlistId).lean().exec();
