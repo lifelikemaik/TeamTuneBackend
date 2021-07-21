@@ -11,7 +11,7 @@ function authenticateAPI(user) {
         clientSecret: config.client_secret,
         redirectUri: 'http://localhost:4000/callback/login',
         refreshToken: user.refresh_token,
-        accessToken: user.access_token
+        accessToken: user.access_token,
     });
     const now = new Date();
     const tokenRefreshEarly = new Date(now.getTime() + 30 * 60000);
@@ -52,7 +52,7 @@ module.exports = {
         try {
             // Get a playlist
             const data = await spotifyApi.getPlaylist(playlistId, {
-                limit: 100
+                limit: 100,
             });
             const tracks = await spotifyApi.getPlaylistTracks(playlistId);
             const allTracks = await getAllTracks(
@@ -178,11 +178,29 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         try {
             const uri = 'spotify:track:' + songId;
-            const result = await spotifyApi.addTracksToPlaylist(
-                playlistId,
-                [uri]
-            );
+            const result = await spotifyApi.addTracksToPlaylist(playlistId, [
+                uri,
+            ]);
             return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+    removeSongFromPlaylist: async function (user, songIds, playlistId) {
+        const songs = songIds.map((songId) => {
+            return {
+                uri: 'spotify:track:' + songId
+            }
+        });
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        try {
+            const result = await spotifyApi.removeTracksFromPlaylist(playlistId, songs, null);
+            return result.body;
         } catch (err) {
             console.log(err);
         }
@@ -205,42 +223,60 @@ module.exports = {
         const tracksArray = Array.from(trackSet);
         return JSON.parse(JSON.stringify(tracksArray));
     },
-    getRecommendationsSpotify: async function (user, tracks, limit, popularity, allTracks) {
+    getRecommendationsSpotify: async function (
+        user,
+        tracks,
+        limit,
+        popularity,
+        allTracks
+    ) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
         }
         const spotifyApi = authenticateAPI(user);
         console.log(tracks);
-        spotifyApi.getRecommendations({
-            seed_tracks: [tracks],
-            limit: limit,
-            target_popularity: popularity,
-            market: 'DE' // only songs available in Germany
-        })
-            .then(function (data) {
-                let recommendations = data.body;
-                let resultIDs = [];
-                for (let i = 0; i < recommendations.tracks.length; i++) {
-                    if (!allTracks.includes(recommendations.tracks[i].id)) {
-                        let iterator = [];
-                        iterator.push(recommendations.tracks[i].id);
-                        iterator.push(recommendations.tracks[i].duration_ms);
-                        iterator.push(recommendations.tracks[i].name);
-                        let artists = [];
-                        for (let j = 0; j < recommendations.tracks[i].artists.length; j++) {
-                            artists.push(recommendations.tracks[i].artists[j].name);
+        spotifyApi
+            .getRecommendations({
+                seed_tracks: [tracks],
+                limit: limit,
+                target_popularity: popularity,
+                market: 'DE', // only songs available in Germany
+            })
+            .then(
+                function (data) {
+                    let recommendations = data.body;
+                    let resultIDs = [];
+                    for (let i = 0; i < recommendations.tracks.length; i++) {
+                        if (!allTracks.includes(recommendations.tracks[i].id)) {
+                            let iterator = [];
+                            iterator.push(recommendations.tracks[i].id);
+                            iterator.push(
+                                recommendations.tracks[i].duration_ms
+                            );
+                            iterator.push(recommendations.tracks[i].name);
+                            let artists = [];
+                            for (
+                                let j = 0;
+                                j < recommendations.tracks[i].artists.length;
+                                j++
+                            ) {
+                                artists.push(
+                                    recommendations.tracks[i].artists[j].name
+                                );
+                            }
+                            iterator.push(artists);
+                            resultIDs.push(iterator);
                         }
-                        iterator.push(artists);
-                        resultIDs.push(iterator);
                     }
+                    //console.log(recommendations);
+                    console.log(resultIDs);
+                    return resultIDs;
+                },
+                function (err) {
+                    console.log('Something went wrong!', err);
                 }
-                //console.log(recommendations);
-                console.log(resultIDs);
-                return resultIDs;
-            }, function (err) {
-                console.log('Something went wrong!', err);
-            });
+            );
     },
     getAveragePopularity: async function (user, playlistID) {
         if (!user || !user.access_token || !user.refresh_token) {
@@ -252,7 +288,8 @@ module.exports = {
         const requestPlaylist = request.body;
         let sumPopularity = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
-            sumPopularity += requestPlaylist.tracks.items[i]['track'].popularity;
+            sumPopularity +=
+                requestPlaylist.tracks.items[i]['track'].popularity;
         }
         return Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
     },
@@ -268,15 +305,20 @@ module.exports = {
         // [averagePopularity, averageTrackDuration, sumDuration]
         let sumPopularity = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
-            sumPopularity += requestPlaylist.tracks.items[i]['track'].popularity;
+            sumPopularity +=
+                requestPlaylist.tracks.items[i]['track'].popularity;
         }
-        const averagePopularity = Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
+        const averagePopularity = Math.floor(
+            sumPopularity / requestPlaylist.tracks.items.length
+        );
         results.push(averagePopularity);
         let sumDuration = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
             sumDuration += requestPlaylist.tracks.items[i]['track'].duration_ms;
         }
-        const averageTrackDuration = Math.floor(sumDuration / requestPlaylist.tracks.items.length);
+        const averageTrackDuration = Math.floor(
+            sumDuration / requestPlaylist.tracks.items.length
+        );
         results.push(averageTrackDuration);
         results.push(sumDuration);
         return results;
@@ -289,7 +331,10 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         // Make sure spotify authentication works
         try {
-            const result = await spotifyApi.changePlaylistDetails(playlistId, details);
+            const result = await spotifyApi.changePlaylistDetails(
+                playlistId,
+                details
+            );
             return result;
         } catch (err) {
             console.log(err);
@@ -303,13 +348,12 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         // Make sure spotify authentication works
         try {
-            const result = await spotifyApi.createPlaylist(playlistTitle)
+            const result = await spotifyApi.createPlaylist(playlistTitle);
             return result.body;
         } catch (err) {
             console.log(err);
         }
     },
-
 };
 
 /**
@@ -331,7 +375,7 @@ async function getAllUserPlaylists(
         offset += 20;
         firstResponse = await spotifyApi.getUserPlaylists(undefined, {
             limit: 20,
-            offset: offset
+            offset: offset,
         });
         firstResponse = firstResponse?.body;
     }
@@ -362,7 +406,7 @@ async function getAllTracks(
         offset += 100;
         firstResponse = await spotifyApi.getPlaylistTracks(playlistId, {
             limit: 100,
-            offset: offset
+            offset: offset,
         });
         firstResponse = firstResponse.body;
     }
