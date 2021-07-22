@@ -16,7 +16,6 @@ const create = async (req, res) => {
     // handle the request
     try {
         // Find the playlist we want to update
-        console.log('req.params.id: ', req.params.id);
         let playlist = await PlaylistModel.findById(req.params.id).exec();
         playlist.music_info.songs.push(req.body);
         // TODO: Update all the other parameters

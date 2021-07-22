@@ -18,6 +18,7 @@ const PlaylistMusicSchema = new mongoose.Schema({
         type: Number,
         required: false //Since there could be empty Playlists on Spotify that would lead to errors on import
     },
+    allow_explicit: Boolean,
     mode: Number,
     min_acousticness: Number,
     max_acousticness: Number,

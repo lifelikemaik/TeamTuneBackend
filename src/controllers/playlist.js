@@ -421,7 +421,7 @@ const packPlaylist = (playlist, spotifyId, userId) => {
         is_teamtune_playlist: false,
         music_info: {
             durations_ms: 0,
-            duration_target: 0,
+            duration_target: playlist.music_info?.duration_target || 0,
             songs: [],
         },
     };
