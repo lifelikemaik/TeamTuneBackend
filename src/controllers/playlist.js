@@ -249,6 +249,7 @@ const read_helper = async (user, playlistSpotify) => {
             title: song.track.name,
             added_by: song.added_by.id,
             duration_ms: song.track.duration_ms,
+            image_url: song.track.album.images[0]?.url
         };
     });
 
