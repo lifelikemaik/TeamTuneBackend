@@ -586,6 +586,7 @@ const find_song_helper = async (user, songName) => {
                 spotify_id: spotifySong.id,
                 name: spotifySong.name,
                 duration_ms: spotifySong.duration_ms,
+                explicit: spotifySong.explicit,
                 artists: spotifySong.artists.map((artist) => {
                     return {
                         id: artist.id,
