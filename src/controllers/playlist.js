@@ -71,7 +71,10 @@ const addPlaylist = async (playlist, userId) => {
 };
 
 const copy = async (req, res) => {
-    const playlistId = req.params.id;
+    let playlistId = req.params.id;
+    if (req.params.id.length !== 24) {
+        playlistId = await convertPublicToPrivateId(req.params.id);
+    }
     const userId = req.userId;
     try {
         const playlist = await PlaylistModel.findById(playlistId).lean().exec();
@@ -242,6 +245,7 @@ const read_invited = async (req, res) => {
 const read_helper = async (user, playlistSpotify) => {
     const songs = playlistSpotify.tracks.items.map((song) => {
         return {
+            id: song.track.id,
             interpret: song.track.artists
                 .map((artist) => artist.name)
                 .join(', '),
@@ -418,7 +422,7 @@ const packPlaylist = (playlist, spotifyId, userId) => {
         is_teamtune_playlist: false,
         music_info: {
             durations_ms: 0,
-            duration_target: 0,
+            duration_target: playlist.music_info?.duration_target || 0,
             songs: [],
         },
     };
@@ -583,6 +587,7 @@ const find_song_helper = async (user, songName) => {
                 spotify_id: spotifySong.id,
                 name: spotifySong.name,
                 duration_ms: spotifySong.duration_ms,
+                explicit: spotifySong.explicit,
                 artists: spotifySong.artists.map((artist) => {
                     return {
                         id: artist.id,

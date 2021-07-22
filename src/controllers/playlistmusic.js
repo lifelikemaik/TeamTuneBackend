@@ -2,6 +2,8 @@
 
 const PlaylistMusicModel = require('../models/playlistmusic');
 const PlaylistModel = require('../models/playlist');
+const UserModel = require('../models/user');
+const { removeSongFromPlaylist } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -14,7 +16,6 @@ const create = async (req, res) => {
     // handle the request
     try {
         // Find the playlist we want to update
-        console.log('req.params.id: ', req.params.id);
         let playlist = await PlaylistModel.findById(req.params.id).exec();
         playlist.music_info.songs.push(req.body);
         // TODO: Update all the other parameters
@@ -34,36 +35,16 @@ const create = async (req, res) => {
 
 const remove = async (req, res) => {
     try {
-        // find playlist
-        let playlist = await PlaylistModel.findById(req.params.id).exec();
-
-        // Map Song objects to their id to be able to search it
-        const idMap = playlist.music_info.songs.map(function (e) {
-            return '' + e._id;
-        });
-        // Index is -1 if no song with song_id exists
-        const index = idMap.indexOf(req.params.song_id);
-
-        let deletedSong;
-        if (index > -1) {
-            deletedSong = playlist.music_info.songs[index];
-            playlist.music_info.songs.splice(index, 1);
-        }
-        // TODO: Update all the other parameters
-
-        playlist.save();
-
-        // return message that song was deleted
-        if (deletedSong) {
-            return res
-                .status(200)
-                .json({ message: `Song with id${req.params.id} was deleted` });
-        } else {
-            return res.status(404).json({
-                error: 'Not Found',
-                message: `Song with id${req.params.id} was not found in playlist`,
-            });
-        }
+        const user = await UserModel.findById(req.userId);
+        const playlist = await PlaylistModel.findById(req.params.id);
+        const spotifyResponse = await removeSongFromPlaylist(
+            user,
+            [req.params.song_id],
+            playlist.spotify_id
+        );
+        console.log('spotifyResponse: ', spotifyResponse);
+        if (spotifyResponse) return res.status(200).json({removedSongId: req.params.song_id});
+        else return res.status(400);
     } catch (err) {
         console.log(err);
         return res.status(500).json({

@@ -33,7 +33,7 @@ router.post("/:id", PlaylistMusicController.create) // Adds new Songs to the pla
 /***
  * checkauthentication fehlt hier
  */
-router.delete("/:id/:song_id", PlaylistMusicController.remove) // Removes the song by song_id from the playlist with id
+router.delete("/:id/:song_id", middlewares.checkAuthentication, PlaylistMusicController.remove) // Removes the song by song_id from the playlist with id
 
 router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.find_song)
 
