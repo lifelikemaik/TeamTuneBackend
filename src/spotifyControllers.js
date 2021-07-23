@@ -349,7 +349,7 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         // Make sure spotify authentication works
         try {
-            const result = await spotifyApi.createPlaylist(playlistTitle);
+            const result = await spotifyApi.createPlaylist(playlistTitle, {'public': false});
             return result.body;
         } catch (err) {
             console.log(err);
