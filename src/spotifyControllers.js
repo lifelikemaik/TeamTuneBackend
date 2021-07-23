@@ -136,6 +136,55 @@ module.exports = {
         }
     },
     /**
+     * The closest thing spotify offers to delete, if you unfollow your own playlist it's basically deleted
+     * @param user user that unfollows the playlist
+     * @param playlistId playlist to unfollow
+     * @returns {Promise<*|null>}
+     */
+    unfollowPlaylistSpotify: async function (user, playlistId) {
+        console.log('user: ', user);
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+
+        try {
+            const result = await spotifyApi.unfollowPlaylist(playlistId);
+            console.log(result);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+    /**
+     * Starts/Resumes a User's Playback
+     * @param user user to start playback from
+     * @param uri optional, can be track/playlist/album uri (spotify:playlist:37i9dQZF1DZ06evO1ROoUO)
+     * @returns {Promise<*|null>}
+     */
+    startPlayback: async function (user, uri) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+
+        const options = {
+            context_uri: uri,
+        };
+
+        try {
+            const result = await spotifyApi.play(options);
+            console.log(result);
+            return result;
+        } catch (err) {
+            console.log(err);
+        }
+    },
+    /**
      * Search for tracks on spotify
      * @param user current user
      * @param trackName name of track, album or artist
@@ -199,7 +248,10 @@ module.exports = {
                 const uri = 'spotify:track:' + songsIds[i];
                 formattedSongIds.push(uri);
             }
-            return await spotifyApi.addTracksToPlaylist(playlistId, formattedSongIds);
+            return await spotifyApi.addTracksToPlaylist(
+                playlistId,
+                formattedSongIds
+            );
         } catch (err) {
             console.log(err);
         }
@@ -207,8 +259,8 @@ module.exports = {
     removeSongFromPlaylist: async function (user, songIds, playlistId) {
         const songs = songIds.map((songId) => {
             return {
-                uri: 'spotify:track:' + songId
-            }
+                uri: 'spotify:track:' + songId,
+            };
         });
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
@@ -217,7 +269,11 @@ module.exports = {
         }
         const spotifyApi = authenticateAPI(user);
         try {
-            const result = await spotifyApi.removeTracksFromPlaylist(playlistId, songs, null);
+            const result = await spotifyApi.removeTracksFromPlaylist(
+                playlistId,
+                songs,
+                null
+            );
             return result.body;
         } catch (err) {
             console.log(err);
@@ -349,7 +405,9 @@ module.exports = {
         const spotifyApi = authenticateAPI(user);
         // Make sure spotify authentication works
         try {
-            const result = await spotifyApi.createPlaylist(playlistTitle, {'public': false});
+            const result = await spotifyApi.createPlaylist(playlistTitle, {
+                public: false,
+            });
             return result.body;
         } catch (err) {
             console.log(err);
