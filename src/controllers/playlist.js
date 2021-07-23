@@ -16,6 +16,7 @@ const { getAllTrackIDs } = require('../spotifyControllers');
 const { followPlaylistSpotify } = require('../spotifyControllers');
 const { getPlaylistAverageInfos } = require('../spotifyControllers');
 const { changePlaylistDetails } = require('../spotifyControllers');
+const { addMultipleSongsToPlaylist } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -77,10 +78,16 @@ const copy = async (req, res) => {
     }
     const userId = req.userId;
     try {
+        const user = await UserModel.findOne({
+            _id: req.userId,
+        }).exec();
         const playlist = await PlaylistModel.findById(playlistId).lean().exec();
         delete playlist._id;
         const newPlaylist = await addPlaylist(playlist, userId);
-        return res.status(201).json(newPlaylist);
+        const tracksToCopy = await getAllTrackIDs(user, playlist.spotify_id);
+        const newCopiedPlaylist = await addMultipleSongsToPlaylist(user, tracksToCopy, newPlaylist.spotify_id);
+        console.log(newCopiedPlaylist);
+        return res.status(201).json(newCopiedPlaylist);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -444,11 +451,6 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
 
 const get_Recommendations = async (req, res) => {
     try {
-        // ACHTUNG! manchmal auch duplikate, bei aehnlichen Liedern, kann ein song kommen, der schon in der Playlist drin ist.
-        /***
-         *
-         * GANZ WICHTIG SPOTIFY ID IST NOTWENDIG
-         */
         const playlistID = '37i9dQZF1DX4jP4eebSWR9';
         const user = await UserModel.findById(req.userId);
         const requestAllTracks = await getAllTrackIDs(user, playlistID);
