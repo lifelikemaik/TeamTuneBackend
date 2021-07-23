@@ -451,7 +451,12 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
 
 const get_Recommendations = async (req, res) => {
     try {
-        const playlistID = '37i9dQZF1DX4jP4eebSWR9';
+        let playlistId = req.params.id;
+        if (req.params.id.length !== 24) {
+            playlistId = await convertPublicToPrivateId(req.params.id);
+        }
+        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        const playlistID = playlist.spotify_id;
         const user = await UserModel.findById(req.userId);
         const requestAllTracks = await getAllTrackIDs(user, playlistID);
         const averagePlaylistInfos = await getPlaylistAverageInfos(
@@ -509,12 +514,16 @@ const get_Full_List_Recommendations = async (req, res) => {
 // if spotify id vorhanden
 const get_playlist_time = async (req, res) => {
     try {
-        //retrieve playlistID ????? req.params.id not working
-        console.log('get rekked: ' + req.params.id);
+        let playlistId = req.params.id;
+        if (req.params.id.length !== 24) {
+            playlistId = await convertPublicToPrivateId(req.params.id);
+        }
+        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        const playlistID = playlist.spotify_id;
         const user = await UserModel.findById(req.userId);
         const requestPlaylist = await getPlaylistSpotify(
             user,
-            '37i9dQZF1DX2lUf1uE6Mre'
+            playlistID
         );
         let time = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
