@@ -186,6 +186,24 @@ module.exports = {
             console.log(err);
         }
     },
+    addMultipleSongsToPlaylist: async function (user, songsIds, playlistId) {
+        // Make sure spotify authentication works
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        const spotifyApi = authenticateAPI(user);
+        try {
+            let formattedSongIds = [];
+            for (let i = 0; i < songsIds.length; i++) {
+                const uri = 'spotify:track:' + songsIds[i];
+                formattedSongIds.push(uri);
+            }
+            return await spotifyApi.addTracksToPlaylist(playlistId, formattedSongIds);
+        } catch (err) {
+            console.log(err);
+        }
+    },
     removeSongFromPlaylist: async function (user, songIds, playlistId) {
         const songs = songIds.map((songId) => {
             return {
@@ -206,9 +224,6 @@ module.exports = {
         }
     },
     getAllTrackIDs: async function (user, playlistID) {
-        //retrieve playlistID ????? req.params.id not working
-        // console.log("get rekked: "+ req.params.id);
-
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
             return null;
@@ -278,21 +293,6 @@ module.exports = {
                 }
             );
     },
-    getAveragePopularity: async function (user, playlistID) {
-        if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.');
-            return null;
-        }
-        const spotifyApi = authenticateAPI(user);
-        const request = await spotifyApi.getPlaylist(playlistID);
-        const requestPlaylist = request.body;
-        let sumPopularity = 0;
-        for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
-            sumPopularity +=
-                requestPlaylist.tracks.items[i]['track'].popularity;
-        }
-        return Math.floor(sumPopularity / requestPlaylist.tracks.items.length);
-    },
     getPlaylistAverageInfos: async function (user, playlistID) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -311,7 +311,6 @@ module.exports = {
         const averagePopularity = Math.floor(
             sumPopularity / requestPlaylist.tracks.items.length
         );
-        results.push(averagePopularity);
         let sumDuration = 0;
         for (let i = 0; i < requestPlaylist.tracks.items.length; i++) {
             sumDuration += requestPlaylist.tracks.items[i]['track'].duration_ms;
@@ -319,8 +318,10 @@ module.exports = {
         const averageTrackDuration = Math.floor(
             sumDuration / requestPlaylist.tracks.items.length
         );
+        results.push(averagePopularity);
         results.push(averageTrackDuration);
         results.push(sumDuration);
+        results.push(sumPopularity);
         return results;
     },
     changePlaylistDetails: async function (user, playlistId, details) {
