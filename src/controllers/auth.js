@@ -1,26 +1,25 @@
-"use strict";
+'use strict';
 const SpotifyWebApi = require('spotify-web-api-node');
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-const config = require("../config");
-const UserModel = require("../models/user");
-const InvitedUser = require("../models/invitedUser");
+const config = require('../config');
+const UserModel = require('../models/user');
+const InvitedUser = require('../models/invitedUser');
 const PlaylistModel = require('../models/playlist');
-
 
 const login = async (req, res) => {
     // check if the body of the request contains all necessary properties
-    if (!Object.prototype.hasOwnProperty.call(req.body, "password"))
+    if (!Object.prototype.hasOwnProperty.call(req.body, 'password'))
         return res.status(400).json({
-            error: "Bad Request",
-            message: "The request body must contain a password property",
+            error: 'Bad Request',
+            message: 'The request body must contain a password property',
         });
 
-    if (!Object.prototype.hasOwnProperty.call(req.body, "username"))
+    if (!Object.prototype.hasOwnProperty.call(req.body, 'username'))
         return res.status(400).json({
-            error: "Bad Request",
-            message: "The request body must contain a username property",
+            error: 'Bad Request',
+            message: 'The request body must contain a username property',
         });
 
     // handle the request
@@ -35,13 +34,13 @@ const login = async (req, res) => {
             req.body.password,
             user.password
         );
-        if (!isPasswordValid) return res.status(401).send({token: null});
+        if (!isPasswordValid) return res.status(401).send({ token: null });
 
         // get access token and check expiration date
         const now = new Date();
         const tokenExpired = new Date(now.getTime() + 60 * 60000);
         if (now >= user.token_refreshdate) {
-            console.log("refresh");
+            console.log('refresh');
             console.log(user.access_token);
             var spotifyApi = new SpotifyWebApi();
             spotifyApi.setCredentials({
@@ -49,7 +48,7 @@ const login = async (req, res) => {
                 clientSecret: config.client_secret,
                 redirectUri: 'http://localhost:4000/callback/login',
                 refreshToken: user.refresh_token,
-                accessToken: user.access_token
+                accessToken: user.access_token,
             });
 
             spotifyApi.refreshAccessToken().then(
@@ -65,18 +64,15 @@ const login = async (req, res) => {
                     console.log('Could not refresh access token', err);
                 }
             );
-
-
         } else {
-            console.log("retrieve token, no refresh");
+            console.log('retrieve token, no refresh');
             console.log(user.access_token);
         }
-
 
         // if user is found and password is valid
         // create a token
         const token = jwt.sign(
-            {_id: user._id, username: user.username, role: user.role},
+            { _id: user._id, username: user.username, role: user.role },
             config.JwtSecret,
             {
                 expiresIn: 86400, // expires in 24 hours
@@ -88,27 +84,38 @@ const login = async (req, res) => {
         });
     } catch (err) {
         return res.status(404).json({
-            error: "User Not Found",
+            error: 'User Not Found',
             message: err.message,
         });
     }
 };
 
-
 const register = async (req, res) => {
+
+    // Make sure user with same doesn't exist already (username has to be unique)
+    const username = req.body.username;
+    const user = await UserModel.findOne({ username: username }).exec();
+    if (!!user) {
+        return res.status(409).json({
+            error: 'User already exists',
+            message: 'User already exists'
+        });
+    }
+
     // check if the body of the request contains all necessary properties
-    if (!Object.prototype.hasOwnProperty.call(req.body, "password"))
+    if (!Object.prototype.hasOwnProperty.call(req.body, 'password'))
         return res.status(400).json({
-            error: "Bad Request",
-            message: "The request body must contain a password property",
+            error: 'Bad Request',
+            message: 'The request body must contain a password property',
         });
 
-    if (!Object.prototype.hasOwnProperty.call(req.body, "username"))
+    if (!Object.prototype.hasOwnProperty.call(req.body, 'username'))
         return res.status(400).json({
-            error: "Bad Request",
-            message: "The request body must contain a username property",
+            error: 'Bad Request',
+            message: 'The request body must contain a username property',
         });
 
+    console.log('1');
     try {
         // hash the password before storing it in the database
         const hashedPassword = bcrypt.hashSync(req.body.password, 8);
@@ -116,12 +123,15 @@ const register = async (req, res) => {
         var credentials = {
             clientId: config.client_id,
             clientSecret: config.client_secret,
-            redirectUri: 'http://localhost:4000/callback/register'
+            redirectUri: 'http://localhost:4000/callback/register',
         };
 
         var spotifyApi = new SpotifyWebApi(credentials);
+        console.log('2');
+        console.log('req.body.code: ', req.body.code);
 
-        spotifyApi.authorizationCodeGrant(req.body.code)
+        spotifyApi
+            .authorizationCodeGrant(req.body.code)
             .then(
                 function (data) {
                     // Set the access token on the API object to use it in later calls
@@ -132,51 +142,52 @@ const register = async (req, res) => {
                     console.log('Something went wrong!', err);
                 }
             )
-            .then(
-                async function () { // anonymous function for user creation
-                    const access = spotifyApi.getAccessToken();
-                    const refresh = spotifyApi.getRefreshToken();
-                    const spotifyId = await spotifyApi.getMe().catch(err => alert(err));
-                    const now = new Date();
-                    const tokenexpired = now.setHours(now.getHours() + 1);
-                    const user = {
-                        username: req.body.username,
-                        password: hashedPassword,
-                        role: req.body.isAdmin ? "admin" : "member",
-                        spotify_id: spotifyId.body.id,
-                        access_token: access,
-                        refresh_token: refresh,
-                        token_refreshdate: tokenexpired
-                    };
-                    // then create user in database, no await because of "then"
-                    let retUser = await UserModel.create(user);
-                    const token = jwt.sign(
-                        {
-                            _id: retUser._id,
-                            username: retUser.username,
-                            role: retUser.role,
-                        },
-                        config.JwtSecret,
-                        {
-                            expiresIn: 86400, // expires in 24 hours
-                        }
-                    );
+            .then(async function () {
+                // anonymous function for user creation
+                console.log('3');
+                const access = spotifyApi.getAccessToken();
+                const refresh = spotifyApi.getRefreshToken();
+                const spotifyId = await spotifyApi.getMe();
+                console.log('spotifyId: ', spotifyId);
+                const now = new Date();
+                const tokenexpired = now.setHours(now.getHours() + 1);
+                const user = {
+                    username: req.body.username,
+                    password: hashedPassword,
+                    role: req.body.isAdmin ? 'admin' : 'member',
+                    spotify_id: spotifyId.body.id,
+                    access_token: access,
+                    refresh_token: refresh,
+                    token_refreshdate: tokenexpired,
+                };
+                // then create user in database, no await because of "then"
+                let retUser = await UserModel.create(user);
+                const token = jwt.sign(
+                    {
+                        _id: retUser._id,
+                        username: retUser.username,
+                        role: retUser.role,
+                    },
+                    config.JwtSecret,
+                    {
+                        expiresIn: 86400, // expires in 24 hours
+                    }
+                );
 
-                    // return generated token
-                    res.status(200).json({
-                        token: token,
-                    });
-                }
-            );
+                // return generated token
+                res.status(200).json({
+                    token: token,
+                });
+            });
     } catch (err) {
         if (err.code == 11000) {
             return res.status(400).json({
-                error: "User exists",
+                error: 'User exists',
                 message: err.message,
             });
         } else {
             return res.status(500).json({
-                error: "Internal server error",
+                error: 'Internal server error',
                 message: err.message,
             });
         }
@@ -184,75 +195,71 @@ const register = async (req, res) => {
 };
 
 const registerInvite = async (req, res) => {
-        // check if the body of the request contains all necessary properties
-        if (!Object.prototype.hasOwnProperty.call(req.body, "username"))
+    // check if the body of the request contains all necessary properties
+    if (!Object.prototype.hasOwnProperty.call(req.body, 'username'))
+        return res.status(400).json({
+            error: 'Bad Request',
+            message: 'The request body must contain a username property',
+        });
+    if (!Object.prototype.hasOwnProperty.call(req.body, 'playlist_id'))
+        return res.status(400).json({
+            error: 'Bad Request',
+            message: 'The request body must contain a playlist_id property',
+        });
+
+    try {
+        const playlist = await PlaylistModel.findById(req.body.playlist_id);
+
+        const user = {
+            username: req.body.username,
+            playlist_id: playlist._id,
+            host_id: playlist.owner,
+        };
+        await InvitedUser.create(user);
+    } catch (err) {
+        if (err.code == 11000) {
             return res.status(400).json({
-                error: "Bad Request",
-                message: "The request body must contain a username property",
+                error: 'User exists',
+                message: err.message,
             });
-        if (!Object.prototype.hasOwnProperty.call(req.body, "playlist_id"))
-            return res.status(400).json({
-                error: "Bad Request",
-                message: "The request body must contain a playlist_id property",
+        } else {
+            return res.status(500).json({
+                error: 'Internal server error',
+                message: err.message,
             });
-
-        try {
-            const playlist = await PlaylistModel.findById(req.body.playlist_id);
-
-            const user = {
-                username: req.body.username,
-                playlist_id: playlist._id,
-                host_id: playlist.owner,
-            };
-            await InvitedUser.create(user);
-
-        } catch (err) {
-            if (err.code == 11000) {
-                return res.status(400).json({
-                    error: "User exists",
-                    message: err.message,
-                });
-            } else {
-                return res.status(500).json({
-                    error: "Internal server error",
-                    message: err.message,
-                });
-            }
         }
     }
-;
-
+};
 const me = async (req, res) => {
     try {
         // get own user name from database
         let user = await UserModel.findById(req.userId)
-            .select("username")
+            .select('username')
             .exec();
 
         if (!user)
             return res.status(404).json({
-                error: "Not Found",
+                error: 'Not Found',
                 message: `User not found`,
             });
 
         return res.status(200).json(user);
     } catch (err) {
         return res.status(500).json({
-            error: "Internal Server Error",
+            error: 'Internal Server Error',
             message: err.message,
         });
     }
 };
 
-
 const logout = (req, res) => {
-    res.status(200).send({token: null});
+    res.status(200).send({ token: null });
 };
 
 const deleteAccount = async (req, res) => {
     try {
         // get own user name from database
-        console.log(req.params.id)
+        console.log(req.params.id);
         await UserModel.findByIdAndRemove(req.params.id).exec();
 
         // return message that user was deleted
@@ -261,7 +268,7 @@ const deleteAccount = async (req, res) => {
             .json({ message: `User with id${req.params.id} was deleted` });
     } catch (err) {
         return res.status(500).json({
-            error: "Internal Server Error",
+            error: 'Internal Server Error',
             message: err.message,
         });
     }
