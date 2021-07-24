@@ -315,7 +315,13 @@ const remove = async (req, res) => {
 const play = async (req, res) => {
     try {
         // create the uri to play
-        const playlist = await PlaylistModel.findById(req.params.id).exec();
+
+        let playlistId = req.params.id;
+        if (req.params.id.length !== 24) {
+            playlistId = await convertPublicToPrivateId(req.params.id);
+        }
+
+        const playlist = await PlaylistModel.findById(playlistId).exec();
         const uri = 'spotify:playlist:' + playlist.spotify_id;
         console.log('playlist.spotify_id: ', playlist.spotify_id);
 
@@ -324,12 +330,11 @@ const play = async (req, res) => {
             _id: req.userId,
         }).exec();
         const result = await startPlayback(user, uri);
-        console.log('result: ', result);
 
         // return message that playlist was deleted
         return res
             .status(200)
-            .json({ message: 'Started playback', playlistId: playlist._id });
+            .json({ message: 'Started playback', playlistId: playlistId });
     } catch (err) {
         console.log(err);
         return res.status(500).json({
