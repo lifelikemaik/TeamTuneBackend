@@ -249,6 +249,23 @@ const logout = (req, res) => {
     res.status(200).send({token: null});
 };
 
+const deleteAccount = async (req, res) => {
+    try {
+        // get own user name from database
+        console.log(req.params.id)
+        await UserModel.findByIdAndRemove(req.params.id).exec();
+
+        // return message that user was deleted
+        return res
+            .status(200)
+            .json({ message: `User with id${req.params.id} was deleted` });
+    } catch (err) {
+        return res.status(500).json({
+            error: "Internal Server Error",
+            message: err.message,
+        });
+    }
+};
 
 module.exports = {
     login,
@@ -256,4 +273,5 @@ module.exports = {
     registerInvite,
     logout,
     me,
+    deleteAccount,
 };

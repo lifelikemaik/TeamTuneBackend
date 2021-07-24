@@ -10,5 +10,6 @@ router.post("/register", AuthController.register); // register a new user
 router.post("/register_invite", AuthController.registerInvite); // register a new invited user
 router.get("/me", middlewares.checkAuthentication, AuthController.me); // get own username, requires a logged in user
 router.get("/logout", middlewares.checkAuthentication, AuthController.logout); // logout user
+router.delete("/delete_account/:id", middlewares.checkAuthentication, AuthController.deleteAccount); // delete user
 
 module.exports = router;
