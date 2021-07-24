@@ -21,7 +21,6 @@ router.get("/invited/:id", PlaylistController.read_invited); // Read a playlist 
 
 router.post("/", middlewares.checkAuthentication, PlaylistController.create); // Create a new Playlist
 
-// TODO: Add authentication
 router.put("/:id", middlewares.checkAuthentication, PlaylistController.update) // Edit playlist by Id (like title)
 
 router.get("/:id/follow", middlewares.checkAuthentication, PlaylistController.follow) // Follow playlist by Id (like title)
