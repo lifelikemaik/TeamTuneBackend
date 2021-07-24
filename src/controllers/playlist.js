@@ -314,6 +314,9 @@ const remove = async (req, res) => {
 
 const play = async (req, res) => {
     try {
+        const body = req.body;
+        const songId = req.body.songId;
+        
         // Get the proper id in case it's accessed from browse
         let playlistId = req.params.id;
         if (req.params.id.length !== 24) {
@@ -322,13 +325,19 @@ const play = async (req, res) => {
 
         // create the uri to play
         const playlist = await PlaylistModel.findById(playlistId).exec();
-        const uri = 'spotify:playlist:' + playlist.spotify_id;
+        const uri = songId
+            ? null
+            : `spotify:playlist:${playlist.spotify_id}`;
+
+
+
+        const songUris = songId ? [`spotify:track:${songId}`] : null;
 
         // Play the playlist
         const user = await UserModel.findOne({
             _id: req.userId,
         }).exec();
-        const result = await startPlayback(user, uri);
+        const result = await startPlayback(user, uri, songUris);
 
         // return message that playlist was played
         return res
