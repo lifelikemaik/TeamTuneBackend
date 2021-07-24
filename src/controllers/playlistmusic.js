@@ -42,7 +42,6 @@ const remove = async (req, res) => {
             [req.params.song_id],
             playlist.spotify_id
         );
-        console.log('spotifyResponse: ', spotifyResponse);
         if (spotifyResponse) return res.status(200).json({removedSongId: req.params.song_id});
         else return res.status(400);
     } catch (err) {

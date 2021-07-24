@@ -295,7 +295,6 @@ const remove = async (req, res) => {
         const playlist = await PlaylistModel.findById(req.params.id).exec();
 
         // Delete/ unfollow that playlist on spotify
-        console.log('req.userId: ', req.userId);
         const user = await UserModel.findOne({
             _id: req.userId,
         }).exec();
@@ -598,7 +597,6 @@ const get_playlist_time = async (req, res) => {
             time += requestPlaylist.tracks.items[i]['track'].duration_ms;
         }
         const timeInMin = time / 60000;
-        console.log('playtime in mins: ' + timeInMin);
         //frontend converts time in minutes
         return res.status(200).json(time);
     } catch (err) {

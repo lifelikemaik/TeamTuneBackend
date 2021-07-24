@@ -40,8 +40,6 @@ const login = async (req, res) => {
         const now = new Date();
         const tokenExpired = new Date(now.getTime() + 60 * 60000);
         if (now >= user.token_refreshdate) {
-            console.log('refresh');
-            console.log(user.access_token);
             var spotifyApi = new SpotifyWebApi();
             spotifyApi.setCredentials({
                 clientId: config.client_id,
@@ -53,9 +51,7 @@ const login = async (req, res) => {
 
             spotifyApi.refreshAccessToken().then(
                 function (data) {
-                    console.log('The access token has been refreshed!');
                     spotifyApi.setAccessToken(data.body['access_token']);
-                    console.log(user.access_token);
                     user.set('access_token', data.body['access_token']);
                     user.set('token_refreshdate', tokenExpired);
                     user.save();
@@ -64,9 +60,6 @@ const login = async (req, res) => {
                     console.log('Could not refresh access token', err);
                 }
             );
-        } else {
-            console.log('retrieve token, no refresh');
-            console.log(user.access_token);
         }
 
         // if user is found and password is valid
@@ -115,7 +108,6 @@ const register = async (req, res) => {
             message: 'The request body must contain a username property',
         });
 
-    console.log('1');
     try {
         // hash the password before storing it in the database
         const hashedPassword = bcrypt.hashSync(req.body.password, 8);
@@ -127,8 +119,6 @@ const register = async (req, res) => {
         };
 
         var spotifyApi = new SpotifyWebApi(credentials);
-        console.log('2');
-        console.log('req.body.code: ', req.body.code);
 
         spotifyApi
             .authorizationCodeGrant(req.body.code)
@@ -144,11 +134,9 @@ const register = async (req, res) => {
             )
             .then(async function () {
                 // anonymous function for user creation
-                console.log('3');
                 const access = spotifyApi.getAccessToken();
                 const refresh = spotifyApi.getRefreshToken();
                 const spotifyId = await spotifyApi.getMe();
-                console.log('spotifyId: ', spotifyId);
                 const now = new Date();
                 const tokenexpired = now.setHours(now.getHours() + 1);
                 const user = {
@@ -259,7 +247,6 @@ const logout = (req, res) => {
 const deleteAccount = async (req, res) => {
     try {
         // get own user name from database
-        console.log(req.params.id);
         await UserModel.findByIdAndRemove(req.params.id).exec();
 
         // return message that user was deleted
