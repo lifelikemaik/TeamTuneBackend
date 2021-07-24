@@ -83,12 +83,24 @@ const copy = async (req, res) => {
             _id: req.userId,
         }).exec();
         const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        // Configure new parameter that need to change
         delete playlist._id;
+        playlist.is_teamtune_playlist = true;
+        playlist.publicity = false;
+
         const newPlaylist = await addPlaylist(playlist, userId);
         const tracksToCopy = await getAllTrackIDs(user, playlist.spotify_id);
-        const newCopiedPlaylist = await addMultipleSongsToPlaylist(user, tracksToCopy, newPlaylist.spotify_id);
-        console.log(newCopiedPlaylist);
-        return res.status(201).json(newCopiedPlaylist);
+        await addMultipleSongsToPlaylist(
+            user,
+            tracksToCopy,
+            newPlaylist.spotify_id
+        );
+        const publicId = SHA256(newPlaylist._id).toString();
+        const updatedPlaylist = await updatePlaylistDatabase(newPlaylist._id, {
+            public_id: publicId,
+        });
+
+        return res.status(201).json(updatedPlaylist);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
