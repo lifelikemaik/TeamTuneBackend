@@ -30,7 +30,6 @@ function authenticateAPI(user) {
         );
         return spotifyApi;
     } else {
-        console.log('no refresh in spotifycontroller');
         return spotifyApi;
     }
 }
@@ -129,7 +128,6 @@ module.exports = {
 
         try {
             const result = await spotifyApi.followPlaylist(playlistId);
-            console.log(result);
             return result;
         } catch (err) {
             console.log(err);
@@ -142,7 +140,6 @@ module.exports = {
      * @returns {Promise<*|null>}
      */
     unfollowPlaylistSpotify: async function (user, playlistId) {
-        console.log('user: ', user);
         // Make sure spotify authentication works
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -152,7 +149,6 @@ module.exports = {
 
         try {
             const result = await spotifyApi.unfollowPlaylist(playlistId);
-            console.log(result);
             return result;
         } catch (err) {
             console.log(err);
@@ -179,12 +175,8 @@ module.exports = {
               }
             : { uris: songUris };
 
-        try {
             const result = await spotifyApi.play(options);
             return result;
-        } catch (err) {
-            console.log(err);
-        }
     },
     /**
      * Search for tracks on spotify

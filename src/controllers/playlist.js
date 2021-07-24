@@ -83,12 +83,24 @@ const copy = async (req, res) => {
             _id: req.userId,
         }).exec();
         const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        // Configure new parameter that need to change
         delete playlist._id;
+        playlist.is_teamtune_playlist = true;
+        playlist.publicity = false;
+
         const newPlaylist = await addPlaylist(playlist, userId);
         const tracksToCopy = await getAllTrackIDs(user, playlist.spotify_id);
-        const newCopiedPlaylist = await addMultipleSongsToPlaylist(user, tracksToCopy, newPlaylist.spotify_id);
-        console.log(newCopiedPlaylist);
-        return res.status(201).json(newCopiedPlaylist);
+        await addMultipleSongsToPlaylist(
+            user,
+            tracksToCopy,
+            newPlaylist.spotify_id
+        );
+        const publicId = SHA256(newPlaylist._id).toString();
+        const updatedPlaylist = await updatePlaylistDatabase(newPlaylist._id, {
+            public_id: publicId,
+        });
+
+        return res.status(201).json(updatedPlaylist);
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -283,7 +295,6 @@ const remove = async (req, res) => {
         const playlist = await PlaylistModel.findById(req.params.id).exec();
 
         // Delete/ unfollow that playlist on spotify
-        console.log('req.userId: ', req.userId);
         const user = await UserModel.findOne({
             _id: req.userId,
         }).exec();
@@ -314,7 +325,6 @@ const remove = async (req, res) => {
 
 const play = async (req, res) => {
     try {
-        const body = req.body;
         const songId = req.body.songId;
         
         // Get the proper id in case it's accessed from browse
@@ -344,10 +354,10 @@ const play = async (req, res) => {
             .status(200)
             .json({ message: 'Started playback', playlistId: playlistId });
     } catch (err) {
-        console.log(err);
+        const error = err.body.error
         return res.status(500).json({
-            error: 'Internal server error',
-            message: err.message,
+            error: error.message || 'Internal server error',
+            message: error.message,
         });
     }
 }
@@ -587,7 +597,6 @@ const get_playlist_time = async (req, res) => {
             time += requestPlaylist.tracks.items[i]['track'].duration_ms;
         }
         const timeInMin = time / 60000;
-        console.log('playtime in mins: ' + timeInMin);
         //frontend converts time in minutes
         return res.status(200).json(time);
     } catch (err) {
@@ -653,6 +662,7 @@ const find_song_helper = async (user, songName) => {
         const songs = songsFiltered.map((spotifySong) => {
             return {
                 spotify_id: spotifySong.id,
+                image_url: spotifySong.album.images[0]?.url,
                 name: spotifySong.name,
                 duration_ms: spotifySong.duration_ms,
                 explicit: spotifySong.explicit,
