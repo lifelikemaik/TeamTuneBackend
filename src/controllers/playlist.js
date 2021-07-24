@@ -314,24 +314,23 @@ const remove = async (req, res) => {
 
 const play = async (req, res) => {
     try {
-        // create the uri to play
-
+        // Get the proper id in case it's accessed from browse
         let playlistId = req.params.id;
         if (req.params.id.length !== 24) {
             playlistId = await convertPublicToPrivateId(req.params.id);
         }
 
+        // create the uri to play
         const playlist = await PlaylistModel.findById(playlistId).exec();
         const uri = 'spotify:playlist:' + playlist.spotify_id;
-        console.log('playlist.spotify_id: ', playlist.spotify_id);
 
-        // Delete/ unfollow that playlist on spotify
+        // Play the playlist
         const user = await UserModel.findOne({
             _id: req.userId,
         }).exec();
         const result = await startPlayback(user, uri);
 
-        // return message that playlist was deleted
+        // return message that playlist was played
         return res
             .status(200)
             .json({ message: 'Started playback', playlistId: playlistId });

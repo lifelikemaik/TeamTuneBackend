@@ -178,7 +178,6 @@ module.exports = {
 
         try {
             const result = await spotifyApi.play(options);
-            console.log(result);
             return result;
         } catch (err) {
             console.log(err);
