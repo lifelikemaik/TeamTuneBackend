@@ -179,12 +179,8 @@ module.exports = {
               }
             : { uris: songUris };
 
-        try {
             const result = await spotifyApi.play(options);
             return result;
-        } catch (err) {
-            console.log(err);
-        }
     },
     /**
      * Search for tracks on spotify

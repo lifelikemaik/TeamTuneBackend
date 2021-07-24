@@ -314,7 +314,6 @@ const remove = async (req, res) => {
 
 const play = async (req, res) => {
     try {
-        const body = req.body;
         const songId = req.body.songId;
         
         // Get the proper id in case it's accessed from browse
@@ -344,10 +343,10 @@ const play = async (req, res) => {
             .status(200)
             .json({ message: 'Started playback', playlistId: playlistId });
     } catch (err) {
-        console.log(err);
+        const error = err.body.error
         return res.status(500).json({
-            error: 'Internal server error',
-            message: err.message,
+            error: error.message || 'Internal server error',
+            message: error.message,
         });
     }
 }
