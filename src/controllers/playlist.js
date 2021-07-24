@@ -4,7 +4,8 @@ const SHA256 = require('crypto-js/sha256');
 const { getUserPlaylistsSpotify } = require('../spotifyControllers');
 const PlaylistModel = require('../models/playlist');
 const UserModel = require('../models/user');
-const https = require('https');
+const { startPlayback } = require('../spotifyControllers');
+const { unfollowPlaylistSpotify } = require('../spotifyControllers');
 const { createPlaylist } = require('../spotifyControllers');
 const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
@@ -279,13 +280,29 @@ const read_helper = async (user, playlistSpotify) => {
 
 const remove = async (req, res) => {
     try {
-        // find and remove playlist
-        await PlaylistModel.findByIdAndRemove(req.params.id).exec();
+        const playlist = await PlaylistModel.findById(req.params.id).exec();
+
+        // Delete/ unfollow that playlist on spotify
+        console.log('req.userId: ', req.userId);
+        const user = await UserModel.findOne({
+            _id: req.userId,
+        }).exec();
+        const result = await unfollowPlaylistSpotify(user, playlist.spotify_id)
+
+        if (result) {
+            // find and remove playlist
+            var deletedPlaylist = await PlaylistModel.findByIdAndRemove(req.params.id).exec();
+        } else {
+            throw new Error("No result from Spotify");
+        }
 
         // return message that playlist was deleted
         return res
             .status(200)
-            .json({ message: `Playlist with id${req.params.id} was deleted` });
+            .json({
+                message: `Playlist with id${deletedPlaylist._id} was deleted`,
+                removedPlaylistId: deletedPlaylist._id,
+            });
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -294,6 +311,46 @@ const remove = async (req, res) => {
         });
     }
 };
+
+const play = async (req, res) => {
+    try {
+        const body = req.body;
+        const songId = req.body.songId;
+        
+        // Get the proper id in case it's accessed from browse
+        let playlistId = req.params.id;
+        if (req.params.id.length !== 24) {
+            playlistId = await convertPublicToPrivateId(req.params.id);
+        }
+
+        // create the uri to play
+        const playlist = await PlaylistModel.findById(playlistId).exec();
+        const uri = songId
+            ? null
+            : `spotify:playlist:${playlist.spotify_id}`;
+
+
+
+        const songUris = songId ? [`spotify:track:${songId}`] : null;
+
+        // Play the playlist
+        const user = await UserModel.findOne({
+            _id: req.userId,
+        }).exec();
+        const result = await startPlayback(user, uri, songUris);
+
+        // return message that playlist was played
+        return res
+            .status(200)
+            .json({ message: 'Started playback', playlistId: playlistId });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+}
 
 const list = async (req, res) => {
     try {
@@ -690,4 +747,5 @@ module.exports = {
     get_playlist_time,
     getAllTrackIDs,
     follow,
+    play,
 };
