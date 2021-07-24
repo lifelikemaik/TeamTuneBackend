@@ -652,6 +652,7 @@ const find_song_helper = async (user, songName) => {
         const songs = songsFiltered.map((spotifySong) => {
             return {
                 spotify_id: spotifySong.id,
+                image_url: spotifySong.album.images[0]?.url,
                 name: spotifySong.name,
                 duration_ms: spotifySong.duration_ms,
                 explicit: spotifySong.explicit,
