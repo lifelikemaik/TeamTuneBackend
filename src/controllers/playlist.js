@@ -530,11 +530,19 @@ const get_Full_List_Recommendations = async (req, res) => {
             user,
             playlistID
         );
+        const lowerEndEstimate = averagePlaylistInfos[3] * 1000 * 60 * 3; //Estimate how long the playlist is if songs > 100
         const averagePopularity = averagePlaylistInfos[0];
         const averageTrackDuration = averagePlaylistInfos[1];
-        const currentDuration = averagePlaylistInfos[2];
+        const currentDuration = Math.max(averagePlaylistInfos[2], lowerEndEstimate);
         let trackSelection = [];
         const maxTime = playlist.music_info.duration_target;
+
+        if (currentDuration > maxTime) {
+            return res.status(400).json({
+                error: 'Max duration reached'
+            });
+        }
+
         const limitRequest = Math.ceil(
             (maxTime - currentDuration) / averageTrackDuration
         );

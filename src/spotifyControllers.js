@@ -305,12 +305,8 @@ module.exports = {
             }
             const spotifyApi = authenticateAPI(user);
             let resultIDs = [];
-            console.log('limit: ', limit);
-            console.log('[tracks]: ', [tracks]);
-            console.log('Math.min(limit, 100): ', Math.min(limit, 100));
-            console.log('popularity: ', popularity);
             const data = await spotifyApi.getRecommendations({
-                seed_tracks: [tracks],
+                seed_tracks: tracks,
                 limit: Math.min(limit, 100),
                 target_popularity: popularity, //Doesn't give results if too high
                 market: 'DE', // only songs available in Germany
@@ -371,6 +367,7 @@ module.exports = {
         results.push(averagePopularity);
         results.push(averageTrackDuration);
         results.push(sumDuration);
+        results.push(requestPlaylist.tracks.total)
         return results;
     },
     changePlaylistDetails: async function (user, playlistId, details) {
