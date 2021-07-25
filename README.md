@@ -4,6 +4,8 @@ seba-master-teamtune-frontend application can be found [here](https://gitlab.lrz
 
 ## Prerequisites
 
+In order to use the web application, a Spotify account is mandatory since you connect the app with your Spotify account.
+
 Both for the backend and frontend application:
 
 * nodejs [official website](https://nodejs.org/en/) - nodejs includes [npm](https://www.npmjs.com/) (node package manager)
