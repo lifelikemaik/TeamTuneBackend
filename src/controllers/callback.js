@@ -17,7 +17,7 @@ function connect(accessToken, useCase){
     var spotifyApi = new SpotifyWebApi({
         clientId: config.client_id,
         clientSecret: config.client_secret,
-        redirectUri: 'http://localhost:4000/callback/login'
+        redirectUri: 'http://teamtune.fun:4000/callback/login'
     });
     spotifyApi.setAccessToken(accessToken);
     return spotifyApi;

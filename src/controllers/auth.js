@@ -44,7 +44,7 @@ const login = async (req, res) => {
             spotifyApi.setCredentials({
                 clientId: config.client_id,
                 clientSecret: config.client_secret,
-                redirectUri: 'http://localhost:4000/callback/login',
+                redirectUri: 'http://teamtune.fun:4000/callback/login',
                 refreshToken: user.refresh_token,
                 accessToken: user.access_token,
             });
@@ -115,7 +115,7 @@ const register = async (req, res) => {
         var credentials = {
             clientId: config.client_id,
             clientSecret: config.client_secret,
-            redirectUri: 'http://localhost:4000/callback/register',
+            redirectUri: 'http://teamtune.fun:4000/callback/register',
         };
 
         var spotifyApi = new SpotifyWebApi(credentials);

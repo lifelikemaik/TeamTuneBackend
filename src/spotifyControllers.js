@@ -9,7 +9,7 @@ function authenticateAPI(user) {
     spotifyApi.setCredentials({
         clientId: config.client_id,
         clientSecret: config.client_secret,
-        redirectUri: 'http://localhost:4000/callback/login',
+        redirectUri: 'http://teamtune.fun:4000/callback/login',
         refreshToken: user.refresh_token,
         accessToken: user.access_token,
     });
