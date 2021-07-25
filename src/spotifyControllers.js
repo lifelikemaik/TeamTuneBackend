@@ -175,8 +175,8 @@ module.exports = {
               }
             : { uris: songUris };
 
-            const result = await spotifyApi.play(options);
-            return result;
+        const result = await spotifyApi.play(options);
+        return result;
     },
     /**
      * Search for tracks on spotify
@@ -316,20 +316,25 @@ module.exports = {
                     let recommendations = data.body;
                     for (let i = 0; i < recommendations.tracks.length; i++) {
                         if (!allTracks.includes(recommendations.tracks[i].id)) {
-                            if (currentTime + recommendations.tracks[i].duration_ms <= maxTime){
+                            if (
+                                currentTime +
+                                    recommendations.tracks[i].duration_ms <=
+                                maxTime
+                            ) {
                                 resultIDs.push(recommendations.tracks[i].id);
                             }
-                            }
                         }
+                    }
                     let formattedSongIds = [];
                     for (let i = 0; i < resultIDs.length; i++) {
                         const uri = 'spotify:track:' + resultIDs[i];
                         formattedSongIds.push(uri);
-                }
+                    }
                     return spotifyApi.addTracksToPlaylist(
                         playlistID,
                         formattedSongIds
-                    );},
+                    );
+                },
                 function (err) {
                     console.log('Something went wrong!', err);
                 }
