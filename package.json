@@ -1,19 +1,15 @@
 {
-  "name": "sebamaster-movie-backend",
+  "name": "teamtune-backend",
   "version": "1.0.0",
-  "description": "EBAMaster movie backend as a service",
+  "description": "TeamTune backend backend as a service",
   "main": "index.js",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/sebischair/sebamaster-movie-backend.git"
+    "url": "https://gitlab.lrz.de/seba-master-2021/team-13/backend"
   },
-  "author": "sebischair",
+  "author": "Team 13",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/sebischair/sebamaster-movie-backend/issues"
-  },
-  "homepage": "ttps://github.com/sebischair/sebamaster-movie-backend.git#readme",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./index.js",
