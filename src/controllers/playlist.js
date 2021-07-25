@@ -90,15 +90,23 @@ const copy = async (req, res) => {
 
         const newPlaylist = await addPlaylist(playlist, userId);
         const tracksToCopy = await getAllTrackIDs(user, playlist.spotify_id);
-        await addMultipleSongsToPlaylist(
-            user,
-            tracksToCopy,
-            newPlaylist.spotify_id
-        );
+        const numberTracks = tracksToCopy.length;
+        const requests = [];
+        for (let i = 0; i < numberTracks; i+=100) {
+            const promise = new Promise((resolve, reject) => {
+                const arraySection = tracksToCopy.slice(i, i + 100);
+                addMultipleSongsToPlaylist(
+                    user,
+                    arraySection,
+                    newPlaylist.spotify_id
+                );
+            })
+            requests.push(promise);
+        }
+        await Promise.all(requests);
         const publicId = SHA256(newPlaylist._id).toString();
-        const updatedPlaylist = await updatePlaylistDatabase(newPlaylist._id, {
-            public_id: publicId,
-        });
+        newPlaylist.publicId = publicId;
+        const updatedPlaylist = await updatePlaylistDatabase(newPlaylist._id, newPlaylist);
 
         return res.status(201).json(updatedPlaylist);
     } catch (err) {
