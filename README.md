@@ -1,6 +1,6 @@
 # seba-master-teamtune-backend application
 
-seba-master-teamtune-frontend application can be found [here](https://gitlab.lrz.de/seba-master-2021/team-13/frontend)
+seba-master-teamtune-frontend application can be found [here](https://gitlab.lrz.de/seba-master-2021/team-13/frontend) using the main branch.
 
 ## Prerequisites
 
