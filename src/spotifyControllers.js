@@ -288,61 +288,6 @@ module.exports = {
         const tracksArray = Array.from(trackSet);
         return JSON.parse(JSON.stringify(tracksArray));
     },
-    getRecommendationsSpotify: async function (
-        user,
-        tracks,
-        limit,
-        popularity,
-        allTracks
-    ) {
-        if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.');
-            return null;
-        }
-        const spotifyApi = authenticateAPI(user);
-        console.log(tracks);
-        spotifyApi
-            .getRecommendations({
-                seed_tracks: [tracks],
-                limit: limit,
-                target_popularity: popularity,
-                market: 'DE', // only songs available in Germany
-            })
-            .then(
-                function (data) {
-                    let recommendations = data.body;
-                    let resultIDs = [];
-                    for (let i = 0; i < recommendations.tracks.length; i++) {
-                        if (!allTracks.includes(recommendations.tracks[i].id)) {
-                            let iterator = [];
-                            iterator.push(recommendations.tracks[i].id);
-                            iterator.push(
-                                recommendations.tracks[i].duration_ms
-                            );
-                            iterator.push(recommendations.tracks[i].name);
-                            let artists = [];
-                            for (
-                                let j = 0;
-                                j < recommendations.tracks[i].artists.length;
-                                j++
-                            ) {
-                                artists.push(
-                                    recommendations.tracks[i].artists[j].name
-                                );
-                            }
-                            iterator.push(artists);
-                            resultIDs.push(iterator);
-                        }
-                    }
-                    //console.log(recommendations);
-                    console.log(resultIDs);
-                    return resultIDs;
-                },
-                function (err) {
-                    console.log('Something went wrong!', err);
-                }
-            );
-    },
     getFullRecommendations: async function (
         user,
         tracks,
@@ -357,9 +302,7 @@ module.exports = {
             console.log('Incorrect user object passed.');
             return null;
         }
-        console.log("spotify controller wird gecalled");
         const spotifyApi = authenticateAPI(user);
-        console.log(tracks);
         let resultIDs = [];
         spotifyApi
             .getRecommendations({
@@ -373,7 +316,6 @@ module.exports = {
                     let recommendations = data.body;
                     for (let i = 0; i < recommendations.tracks.length; i++) {
                         if (!allTracks.includes(recommendations.tracks[i].id)) {
-                            console.log("loop  " + i);
                             if (currentTime + recommendations.tracks[i].duration_ms <= maxTime){
                                 resultIDs.push(recommendations.tracks[i].id);
                             }

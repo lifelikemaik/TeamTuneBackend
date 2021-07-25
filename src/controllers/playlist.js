@@ -11,7 +11,6 @@ const { addSongToPlaylist } = require('../spotifyControllers');
 const { getAudioFeaturesForTracks } = require('../spotifyControllers');
 const { getUserNameFromId } = require('../spotifyControllers');
 const { searchTracksSpotify } = require('../spotifyControllers');
-const { getRecommendationsSpotify } = require('../spotifyControllers');
 const { getPlaylistSpotify } = require('../spotifyControllers');
 const { getAllTrackIDs } = require('../spotifyControllers');
 const { followPlaylistSpotify } = require('../spotifyControllers');
@@ -516,64 +515,8 @@ const packPlaylistUpdate = (playlist, spotifyId, userId) => {
     };
 };
 
-
-const get_Recommendations = async (req, res) => {
-    try {
-        let playlistId = req.params.id;
-        if (req.params.id.length !== 24) {
-            playlistId = await convertPublicToPrivateId(req.params.id);
-        }
-        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
-        const playlistID = playlist.spotify_id;
-        const user = await UserModel.findById(req.userId);
-        const requestAllTracks = await getAllTrackIDs(user, playlistID);
-        const averagePlaylistInfos = await getPlaylistAverageInfos(
-            user,
-            playlistID
-        );
-        const averagePopularity = await averagePlaylistInfos[0];
-        if (requestAllTracks.length <= 6) {
-            let requestRecommendation = await getRecommendationsSpotify(
-                user,
-                requestAllTracks,
-                5,
-                averagePopularity,
-                requestAllTracks
-            );
-            console.log('mit weniger gleich 6: ');
-            return res.status(200).json(requestRecommendation);
-        } else {
-            let randomSelection = [];
-            while (randomSelection.length < 5) {
-                let r = Math.floor(Math.random() * requestAllTracks.length);
-                if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
-            }
-            let trackRandoms = [];
-            randomSelection.forEach((number) =>
-                trackRandoms.push(requestAllTracks[number])
-            );
-            let requestRecommendation = await getRecommendationsSpotify(
-                user,
-                trackRandoms,
-                5,
-                averagePopularity,
-                requestAllTracks
-            );
-            console.log('mit random 6: ');
-            return res.status(200).json(requestRecommendation);
-        }
-    } catch (err) {
-        console.log('err: ', err);
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: err.message,
-        });
-    }
-};
-
 const get_Full_List_Recommendations = async (req, res) => {
     try {
-        console.log("controller call");
         let playlistId = req.params.id;
         const playlist = await PlaylistModel.findById(playlistId).lean().exec();
         const playlistID = playlist.spotify_id;
@@ -785,7 +728,6 @@ module.exports = {
     find_song_invited,
     add_song,
     add_song_invited,
-    get_Recommendations,
     get_playlist_time,
     getAllTrackIDs,
     get_Full_List_Recommendations,
