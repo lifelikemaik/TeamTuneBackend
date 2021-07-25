@@ -9,7 +9,7 @@ const UserModel = require("../models/user");
 const registerSpotify = async (req, res) => {
     var code  = req.query.code; // Read the authorization code from the query parameters
     var state = req.query.state; // (Optional) Read the state from the query parameters
-    res.redirect("http://localhost:3000/register?isLinked=true&code=" + code);
+    res.redirect("http://teamtune.fun/register?isLinked=true&code=" + code);
 }
 
 function connect(accessToken, useCase){
