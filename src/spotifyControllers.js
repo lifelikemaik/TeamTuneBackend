@@ -270,61 +270,57 @@ module.exports = {
         const tracksArray = Array.from(trackSet);
         return JSON.parse(JSON.stringify(tracksArray));
     },
-    getRecommendationsSpotify: async function (
+    getFullRecommendations: async function (
         user,
         tracks,
         limit,
         popularity,
-        allTracks
+        allTracks,
+        currentTime,
+        maxTime,
+        playlistID
     ) {
-        if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.');
-            return null;
-        }
-        const spotifyApi = authenticateAPI(user);
-        console.log(tracks);
-        spotifyApi
-            .getRecommendations({
-                seed_tracks: [tracks],
-                limit: limit,
-                target_popularity: popularity,
+        try {
+            if (!user || !user.access_token || !user.refresh_token) {
+                console.log('Incorrect user object passed.');
+                return null;
+            }
+            const spotifyApi = authenticateAPI(user);
+            let resultIDs = [];
+            const data = await spotifyApi.getRecommendations({
+                seed_tracks: tracks,
+                limit: Math.min(limit, 100),
+                target_popularity: popularity, //Doesn't give results if too high
                 market: 'DE', // only songs available in Germany
-            })
-            .then(
-                function (data) {
-                    let recommendations = data.body;
-                    let resultIDs = [];
-                    for (let i = 0; i < recommendations.tracks.length; i++) {
-                        if (!allTracks.includes(recommendations.tracks[i].id)) {
-                            let iterator = [];
-                            iterator.push(recommendations.tracks[i].id);
-                            iterator.push(
-                                recommendations.tracks[i].duration_ms
-                            );
-                            iterator.push(recommendations.tracks[i].name);
-                            let artists = [];
-                            for (
-                                let j = 0;
-                                j < recommendations.tracks[i].artists.length;
-                                j++
-                            ) {
-                                artists.push(
-                                    recommendations.tracks[i].artists[j].name
-                                );
-                            }
-                            iterator.push(artists);
-                            resultIDs.push(iterator);
-                        }
+            });
+
+            let recommendations = data.body;
+            for (let i = 0; i < recommendations.tracks.length; i++) {
+                if (!allTracks.includes(recommendations.tracks[i].id)) {
+                    if (
+                        currentTime + recommendations.tracks[i].duration_ms <=
+                        maxTime
+                    ) {
+                        resultIDs.push(recommendations.tracks[i].id);
                     }
-                    //console.log(recommendations);
-                    console.log(resultIDs);
-                    return resultIDs;
-                },
-                function (err) {
-                    console.log('Something went wrong!', err);
                 }
+            }
+            let formattedSongIds = [];
+            for (let i = 0; i < resultIDs.length; i++) {
+                const uri = 'spotify:track:' + resultIDs[i];
+                formattedSongIds.push(uri);
+            }
+            const result = await spotifyApi.addTracksToPlaylist(
+                playlistID,
+                formattedSongIds
             );
+            return result.body;
+        } catch (err) {
+            console.log('err: ', err);
+        }
+
     },
+
     getPlaylistAverageInfos: async function (user, playlistID) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -353,7 +349,7 @@ module.exports = {
         results.push(averagePopularity);
         results.push(averageTrackDuration);
         results.push(sumDuration);
-        results.push(sumPopularity);
+        results.push(requestPlaylist.tracks.total)
         return results;
     },
     changePlaylistDetails: async function (user, playlistId, details) {
