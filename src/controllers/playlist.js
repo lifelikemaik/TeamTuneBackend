@@ -91,6 +91,7 @@ const copy = async (req, res) => {
         // Configure new parameter that need to change
         delete playlist._id;
         playlist.is_teamtune_playlist = true;
+        playlist.is_own_playlist = true;
         playlist.publicity = false;
 
         const newPlaylist = await addPlaylist(playlist, userId);
