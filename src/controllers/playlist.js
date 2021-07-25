@@ -536,31 +536,38 @@ const get_Full_List_Recommendations = async (req, res) => {
         let trackSelection = [];
         const maxTime = playlist.music_info.duration_target;
         const limitRequest = Math.ceil(
-            ((maxTime - currentDuration) / averageTrackDuration) * 1.5
+            ((maxTime - currentDuration) / averageTrackDuration)
         );
         if (allTracks.length <= 6) {
             trackSelection = Array.from(allTracks);
         } else {
-            let randomSelection = [];
-            while (randomSelection.length < 5) {
-                let r = Math.floor(Math.random() * allTracks.length);
-                if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
-            }
-            randomSelection.forEach((number) =>
-                trackSelection.push(allTracks[number])
-            );
+            trackSelection = getRandomTracks(allTracks);
         }
-        const result = await getFullRecommendations(
-            user,
-            trackSelection,
-            limitRequest,
-            averagePopularity,
-            allTracks,
-            currentDuration,
-            maxTime,
-            playlistID
-        );
-        return res.status(200).json(result);
+        const requests = [];
+        let limitLeft = limitRequest;
+        for (let i = 0; i < Math.ceil(limitRequest / 100); i++) {
+            trackSelection = allTracks.length <= 6 ? trackSelection : getRandomTracks(allTracks);
+            const promise = new Promise(async (resolve, reject) => {
+                const result = await getFullRecommendations(
+                    user,
+                    trackSelection,
+                    limitLeft,
+                    averagePopularity,
+                    allTracks,
+                    currentDuration,
+                    maxTime,
+                    playlistID
+                );
+                limitLeft -= 100;
+                resolve(result);
+            });
+            requests.push(promise);
+        }
+
+        console.log('requests: ', requests);
+        const results = await Promise.all(requests);
+        console.log('results: ', results);
+        return res.status(200).json(results[results.length - 1]);
     } catch (err) {
         console.log('err: ', err);
         return res.status(500).json({
@@ -569,6 +576,19 @@ const get_Full_List_Recommendations = async (req, res) => {
         });
     }
 };
+
+function getRandomTracks(allTracks) {
+    const trackSelection = [];
+    const randomIndexSelection = [];
+    while (randomIndexSelection.length < 5) {
+        let r = Math.floor(Math.random() * allTracks.length);
+        if (randomIndexSelection.indexOf(r) === -1) randomIndexSelection.push(r);
+    }
+    randomIndexSelection.forEach((number) =>
+        trackSelection.push(allTracks[number])
+    );
+    return trackSelection;
+}
 
 // if spotify id vorhanden
 const get_playlist_time = async (req, res) => {
