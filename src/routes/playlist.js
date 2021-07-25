@@ -35,7 +35,7 @@ router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistControll
 
 router.get("/songs/:songname/invited/:id", PlaylistController.find_song_invited)
 
-//router.get("/songs/:songname", middlewares.checkAuthentication, PlaylistController.get_Recommendations)
+router.get("/fullrecommendation/:id", middlewares.checkAuthentication, PlaylistController.get_Full_List_Recommendations)
 
 router.get("/length/:id", middlewares.checkAuthentication, PlaylistController.get_playlist_time)
 

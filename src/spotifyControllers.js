@@ -343,6 +343,57 @@ module.exports = {
                 }
             );
     },
+    getFullRecommendations: async function (
+        user,
+        tracks,
+        limit,
+        popularity,
+        allTracks,
+        currentTime,
+        maxTime,
+        playlistID
+    ) {
+        if (!user || !user.access_token || !user.refresh_token) {
+            console.log('Incorrect user object passed.');
+            return null;
+        }
+        console.log("spotify controller wird gecalled");
+        const spotifyApi = authenticateAPI(user);
+        console.log(tracks);
+        let resultIDs = [];
+        spotifyApi
+            .getRecommendations({
+                seed_tracks: [tracks],
+                limit: limit,
+                target_popularity: popularity,
+                market: 'DE', // only songs available in Germany
+            })
+            .then(
+                function (data) {
+                    let recommendations = data.body;
+                    for (let i = 0; i < recommendations.tracks.length; i++) {
+                        if (!allTracks.includes(recommendations.tracks[i].id)) {
+                            console.log("loop  " + i);
+                            if (currentTime + recommendations.tracks[i].duration_ms <= maxTime){
+                                resultIDs.push(recommendations.tracks[i].id);
+                            }
+                            }
+                        }
+                    let formattedSongIds = [];
+                    for (let i = 0; i < resultIDs.length; i++) {
+                        const uri = 'spotify:track:' + resultIDs[i];
+                        formattedSongIds.push(uri);
+                }
+                    return spotifyApi.addTracksToPlaylist(
+                        playlistID,
+                        formattedSongIds
+                    );},
+                function (err) {
+                    console.log('Something went wrong!', err);
+                }
+            );
+    },
+
     getPlaylistAverageInfos: async function (user, playlistID) {
         if (!user || !user.access_token || !user.refresh_token) {
             console.log('Incorrect user object passed.');
@@ -371,7 +422,6 @@ module.exports = {
         results.push(averagePopularity);
         results.push(averageTrackDuration);
         results.push(sumDuration);
-        results.push(sumPopularity);
         return results;
     },
     changePlaylistDetails: async function (user, playlistId, details) {

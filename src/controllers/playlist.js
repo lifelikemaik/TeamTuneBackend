@@ -18,6 +18,7 @@ const { followPlaylistSpotify } = require('../spotifyControllers');
 const { getPlaylistAverageInfos } = require('../spotifyControllers');
 const { changePlaylistDetails } = require('../spotifyControllers');
 const { addMultipleSongsToPlaylist } = require('../spotifyControllers');
+const { getFullRecommendations } = require('../spotifyControllers');
 
 const create = async (req, res) => {
     // check if the body of the request contains all necessary properties
@@ -530,7 +531,6 @@ const get_Recommendations = async (req, res) => {
             user,
             playlistID
         );
-        console.log(averagePlaylistInfos);
         const averagePopularity = await averagePlaylistInfos[0];
         if (requestAllTracks.length <= 6) {
             let requestRecommendation = await getRecommendationsSpotify(
@@ -572,10 +572,42 @@ const get_Recommendations = async (req, res) => {
 };
 
 const get_Full_List_Recommendations = async (req, res) => {
-    // wie get_Recommendations nur in extremo
-    // get time left and time now --> multiple get Recomms, with estimator of songs
-    // --> average song time?
-    // Idee: Rekursiv
+    try {
+        console.log("controller call");
+        let playlistId = req.params.id;
+        const playlist = await PlaylistModel.findById(playlistId).lean().exec();
+        const playlistID = playlist.spotify_id;
+        const user = await UserModel.findById(req.userId);
+        const allTracks = await getAllTrackIDs(user, playlistID);
+        const averagePlaylistInfos = await getPlaylistAverageInfos(
+            user,
+            playlistID
+        );
+        const averagePopularity = averagePlaylistInfos[0];
+        const averageTrackDuration = averagePlaylistInfos[1];
+        const currentDuration = averagePlaylistInfos[2];
+        let trackSelection = [];
+        const maxTime = playlist.music_info.duration_target;
+        const limitRequest = Math.ceil((maxTime - currentDuration) / averageTrackDuration * 1.5) ;
+        if(allTracks.length <= 6){
+            trackSelection = Array.from(allTracks);
+        } else {
+            let randomSelection = [];
+            while (randomSelection.length < 5) {
+                let r = Math.floor(Math.random() * allTracks.length);
+                if (randomSelection.indexOf(r) === -1) randomSelection.push(r);
+            }
+            randomSelection.forEach(number => trackSelection.push(allTracks[number]));
+        }
+        const result = await getFullRecommendations(user, trackSelection, limitRequest, averagePopularity, allTracks, currentDuration, maxTime, playlistID);
+        return res.status(200).json(result);
+    } catch (err) {
+        console.log('err: ', err);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: err.message,
+        });
+    }
 };
 
 // if spotify id vorhanden
@@ -756,6 +788,7 @@ module.exports = {
     get_Recommendations,
     get_playlist_time,
     getAllTrackIDs,
+    get_Full_List_Recommendations,
     follow,
     play,
 };
