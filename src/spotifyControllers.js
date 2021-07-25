@@ -304,41 +304,45 @@ module.exports = {
         }
         const spotifyApi = authenticateAPI(user);
         let resultIDs = [];
-        spotifyApi
-            .getRecommendations({
-                seed_tracks: [tracks],
-                limit: limit,
-                target_popularity: popularity,
-                market: 'DE', // only songs available in Germany
-            })
-            .then(
-                function (data) {
-                    let recommendations = data.body;
-                    for (let i = 0; i < recommendations.tracks.length; i++) {
-                        if (!allTracks.includes(recommendations.tracks[i].id)) {
-                            if (
-                                currentTime +
+        return new Promise((resolve, reject) => {
+            spotifyApi
+                .getRecommendations({
+                    seed_tracks: [tracks],
+                    limit: limit,
+                    target_popularity: popularity,
+                    market: 'DE', // only songs available in Germany
+                })
+                .then(
+                    async function (data) {
+                        let recommendations = data.body;
+                        for (let i = 0; i < recommendations.tracks.length; i++) {
+                            if (!allTracks.includes(recommendations.tracks[i].id)) {
+                                if (
+                                    currentTime +
                                     recommendations.tracks[i].duration_ms <=
-                                maxTime
-                            ) {
-                                resultIDs.push(recommendations.tracks[i].id);
+                                    maxTime
+                                ) {
+                                    resultIDs.push(recommendations.tracks[i].id);
+                                }
                             }
                         }
+                        let formattedSongIds = [];
+                        for (let i = 0; i < resultIDs.length; i++) {
+                            const uri = 'spotify:track:' + resultIDs[i];
+                            formattedSongIds.push(uri);
+                        }
+                        const result = await spotifyApi.addTracksToPlaylist(
+                            playlistID,
+                            formattedSongIds
+                        );
+                        resolve(result.body);
+                    },
+                    function (err) {
+                        console.log('Something went wrong!', err);
+                        reject(err);
                     }
-                    let formattedSongIds = [];
-                    for (let i = 0; i < resultIDs.length; i++) {
-                        const uri = 'spotify:track:' + resultIDs[i];
-                        formattedSongIds.push(uri);
-                    }
-                    return spotifyApi.addTracksToPlaylist(
-                        playlistID,
-                        formattedSongIds
-                    );
-                },
-                function (err) {
-                    console.log('Something went wrong!', err);
-                }
-            );
+                );
+        })
     },
 
     getPlaylistAverageInfos: async function (user, playlistID) {
