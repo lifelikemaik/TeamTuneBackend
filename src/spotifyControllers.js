@@ -298,40 +298,49 @@ module.exports = {
         maxTime,
         playlistID
     ) {
-        if (!user || !user.access_token || !user.refresh_token) {
-            console.log('Incorrect user object passed.');
-            return null;
-        }
-        const spotifyApi = authenticateAPI(user);
-        let resultIDs = [];
-        const data = await spotifyApi.getRecommendations({
-            seed_tracks: [tracks],
-            limit: Math.min(limit, 100),
-            target_popularity: popularity,
-            market: 'DE', // only songs available in Germany
-        });
+        try {
+            if (!user || !user.access_token || !user.refresh_token) {
+                console.log('Incorrect user object passed.');
+                return null;
+            }
+            const spotifyApi = authenticateAPI(user);
+            let resultIDs = [];
+            console.log('limit: ', limit);
+            console.log('[tracks]: ', [tracks]);
+            console.log('Math.min(limit, 100): ', Math.min(limit, 100));
+            console.log('popularity: ', popularity);
+            const data = await spotifyApi.getRecommendations({
+                seed_tracks: [tracks],
+                limit: Math.min(limit, 100),
+                target_popularity: popularity, //Doesn't give results if too high
+                market: 'DE', // only songs available in Germany
+            });
 
-        let recommendations = data.body;
-        for (let i = 0; i < recommendations.tracks.length; i++) {
-            if (!allTracks.includes(recommendations.tracks[i].id)) {
-                if (
-                    currentTime + recommendations.tracks[i].duration_ms <=
-                    maxTime
-                ) {
-                    resultIDs.push(recommendations.tracks[i].id);
+            let recommendations = data.body;
+            for (let i = 0; i < recommendations.tracks.length; i++) {
+                if (!allTracks.includes(recommendations.tracks[i].id)) {
+                    if (
+                        currentTime + recommendations.tracks[i].duration_ms <=
+                        maxTime
+                    ) {
+                        resultIDs.push(recommendations.tracks[i].id);
+                    }
                 }
             }
+            let formattedSongIds = [];
+            for (let i = 0; i < resultIDs.length; i++) {
+                const uri = 'spotify:track:' + resultIDs[i];
+                formattedSongIds.push(uri);
+            }
+            const result = await spotifyApi.addTracksToPlaylist(
+                playlistID,
+                formattedSongIds
+            );
+            return result.body;
+        } catch (err) {
+            console.log('err: ', err);
         }
-        let formattedSongIds = [];
-        for (let i = 0; i < resultIDs.length; i++) {
-            const uri = 'spotify:track:' + resultIDs[i];
-            formattedSongIds.push(uri);
-        }
-        const result = await spotifyApi.addTracksToPlaylist(
-            playlistID,
-            formattedSongIds
-        );
-        return result.body;
+
     },
 
     getPlaylistAverageInfos: async function (user, playlistID) {

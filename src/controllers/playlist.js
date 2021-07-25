@@ -538,15 +538,13 @@ const get_Full_List_Recommendations = async (req, res) => {
         const limitRequest = Math.ceil(
             (maxTime - currentDuration) / averageTrackDuration
         );
-        if (allTracks.length <= 6) {
-            trackSelection = Array.from(allTracks);
-        } else {
-            trackSelection = getRandomTracks(allTracks);
+        if (allTracks.length < 6) {
+            trackSelection = [...allTracks];
         }
         const requests = [];
         let limitLeft = limitRequest;
         for (let i = 0; i < Math.ceil(limitRequest / 100); i++) {
-            trackSelection = allTracks.length <= 6 ? trackSelection : getRandomTracks(allTracks);
+            trackSelection = allTracks.length < 6 ? trackSelection : getRandomTracks(allTracks);
             const promise = new Promise(async (resolve, reject) => {
                 const result = await getFullRecommendations(
                     user,
