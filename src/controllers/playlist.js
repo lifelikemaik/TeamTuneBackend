@@ -99,13 +99,14 @@ const copy = async (req, res) => {
         const numberTracks = tracksToCopy.length;
         const requests = [];
         for (let i = 0; i < numberTracks; i+=100) {
-            const promise = new Promise((resolve, reject) => {
+            const promise = new Promise( (resolve, reject) => {
                 const arraySection = tracksToCopy.slice(i, i + 100);
                 addMultipleSongsToPlaylist(
                     user,
                     arraySection,
                     newPlaylist.spotify_id
                 );
+                resolve();
             })
             requests.push(promise);
         }
