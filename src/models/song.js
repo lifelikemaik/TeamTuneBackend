@@ -25,5 +25,5 @@ const SongSchema = new mongoose.Schema({
 
 SongSchema.set("versionKey", false);
 
-// Export the Movie model
+// Export the Song model
 module.exports = mongoose.model("Song", SongSchema);

@@ -45,5 +45,5 @@ const PlaylistMusicSchema = new mongoose.Schema({
 
 PlaylistMusicSchema.set("versionKey", false);
 
-// Export the Movie model
+// Export the PlaylistMusic model
 module.exports = mongoose.model("PlaylistMusic", PlaylistMusicSchema);

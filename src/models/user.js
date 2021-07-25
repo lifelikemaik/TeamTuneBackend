@@ -34,5 +34,5 @@ const UserSchema = new mongoose.Schema({
 
 UserSchema.set("versionKey", false);
 
-// Export the Movie model
+// Export the User model
 module.exports = mongoose.model("User", UserSchema);

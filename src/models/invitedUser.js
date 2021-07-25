@@ -14,5 +14,5 @@ const InvitedUserSchema = new mongoose.Schema({
 
 InvitedUserSchema.set("versionKey", false);
 
-// Export the Movie model
+// Export the InvitedUser model
 module.exports = mongoose.model("InvitedUser", InvitedUserSchema);
