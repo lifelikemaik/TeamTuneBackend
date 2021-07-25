@@ -536,7 +536,7 @@ const get_Full_List_Recommendations = async (req, res) => {
         let trackSelection = [];
         const maxTime = playlist.music_info.duration_target;
         const limitRequest = Math.ceil(
-            ((maxTime - currentDuration) / averageTrackDuration)
+            (maxTime - currentDuration) / averageTrackDuration
         );
         if (allTracks.length <= 6) {
             trackSelection = Array.from(allTracks);
@@ -558,15 +558,13 @@ const get_Full_List_Recommendations = async (req, res) => {
                     maxTime,
                     playlistID
                 );
-                limitLeft -= 100;
                 resolve(result);
             });
+            limitLeft -= 100;
             requests.push(promise);
         }
 
-        console.log('requests: ', requests);
         const results = await Promise.all(requests);
-        console.log('results: ', results);
         return res.status(200).json(results[results.length - 1]);
     } catch (err) {
         console.log('err: ', err);

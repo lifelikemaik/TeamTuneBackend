@@ -304,7 +304,6 @@ module.exports = {
         }
         const spotifyApi = authenticateAPI(user);
         let resultIDs = [];
-        console.log('limit: ', limit);
         const data = await spotifyApi.getRecommendations({
             seed_tracks: [tracks],
             limit: Math.min(limit, 100),
@@ -312,7 +311,6 @@ module.exports = {
             market: 'DE', // only songs available in Germany
         });
 
-        console.log('in then');
         let recommendations = data.body;
         for (let i = 0; i < recommendations.tracks.length; i++) {
             if (!allTracks.includes(recommendations.tracks[i].id)) {
@@ -333,7 +331,6 @@ module.exports = {
             playlistID,
             formattedSongIds
         );
-        console.log('end then, ', result.body);
         return result.body;
     },
 
