@@ -1,7 +1,6 @@
 "use strict";
 
 const mongoose = require("mongoose");
-const Song = require('./song')
 
 // Define the user schema
 const PlaylistMusicSchema = new mongoose.Schema({
@@ -12,11 +11,6 @@ const PlaylistMusicSchema = new mongoose.Schema({
     durations_ms: {
         type: Number,
         required: true
-    },
-    songs: [Song.schema],
-    number_songs: {
-        type: Number,
-        required: false //Since there could be empty Playlists on Spotify that would lead to errors on import
     },
     allow_explicit: Boolean,
     mode: Number,
