@@ -14,7 +14,7 @@ const tracks_uri = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
 // Configure Spotify API app credentials
 const client_id = '13fc26a1aa724752953370044913e510'; // Your client id
 const client_secret = 'ba4d3f52435c4928952e15184711f7b7'; // Your secret
-const redirect_uri = "http://localhost:3000/callback"
+const redirect_uri = "https://teamtune.fun/callback"
 
 // Exporting all variables
 module.exports = {

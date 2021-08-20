@@ -9,7 +9,7 @@ const UserModel = require("../models/user");
 const registerSpotify = async (req, res) => {
     var code  = req.query.code; // Read the authorization code from the query parameters
     var state = req.query.state; // (Optional) Read the state from the query parameters
-    res.redirect("http://localhost:3000/register?isLinked=true&code=" + code);
+    res.redirect("https://teamtune.fun/register?isLinked=true&code=" + code);
 }
 
 function connect(accessToken, useCase){
@@ -17,7 +17,7 @@ function connect(accessToken, useCase){
     var spotifyApi = new SpotifyWebApi({
         clientId: config.client_id,
         clientSecret: config.client_secret,
-        redirectUri: 'http://localhost:4000/callback/login'
+        redirectUri: 'https://backend.teamtune.fun/callback/login'
     });
     spotifyApi.setAccessToken(accessToken);
     return spotifyApi;
